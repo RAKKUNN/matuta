@@ -9,7 +9,7 @@ enum SourceTab: String, CaseIterable, Identifiable {
     case spotify = "Spotify"
     case web = "YouTube/웹"
     case radio = "라디오"
-    case appleMusic = "Music"
+    case appleMusic = "Apple Music"
 
     var id: String { rawValue }
 
@@ -37,12 +37,17 @@ struct AlarmEditView: View {
     @State private var isDropTargeted: Bool = false
     @State private var isPreviewing: Bool = false
     @State private var previewPlayer = TonePlayer()
+    @State private var lastVolumeFeedbackTime = Date()
 
     @State private var isPM: Bool = false
     @State private var hour12: Int = 7
 
     private let onSave: (Alarm) -> Void
     private let onCancel: () -> Void
+
+    private var theme: CozyTheme {
+        ThemeManager.shared.current
+    }
 
     init(
         alarm: Alarm,
@@ -59,20 +64,20 @@ struct AlarmEditView: View {
             // 상단 네비게이션 바
             headerBar
 
-            Divider().opacity(0.15)
+            Divider().opacity(theme.isLight ? 0.08 : 0.12)
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
-                    // 1. 시계 타임 피커 & 퀵 타임 프리셋
+                    // 1. 타임 스컬프터
                     timeSculptorSection
 
-                    // 2. 반복 요일 설정
+                    // 2. 반복 요일
                     weekdaySection
 
                     // 3. 라벨 입력
                     labelSection
 
-                    // 4. 사운드 스튜디오 데크
+                    // 4. 사운드 덱 (아이콘 전용 바)
                     soundDeckSection
 
                     // 5. 볼륨 및 옵션
@@ -82,7 +87,7 @@ struct AlarmEditView: View {
             }
         }
         .frame(width: 440, height: 620)
-        .background(MatutaTheme.baseBackground)
+        .background(theme.baseBackground)
         .onAppear {
             initializeState()
         }
@@ -91,7 +96,7 @@ struct AlarmEditView: View {
         }
     }
 
-    // MARK: - Header
+    // MARK: - Header Bar
 
     private var headerBar: some View {
         HStack {
@@ -101,13 +106,13 @@ struct AlarmEditView: View {
             }
             .buttonStyle(.plain)
             .font(.system(size: 13, weight: .regular))
-            .foregroundStyle(MatutaTheme.textSecondary)
+            .foregroundStyle(theme.textSecondary)
 
             Spacer()
 
             Text("알람 설정")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(MatutaTheme.textPrimary)
+                .foregroundStyle(theme.textPrimary)
 
             Spacer()
 
@@ -119,12 +124,12 @@ struct AlarmEditView: View {
             }
             .buttonStyle(.plain)
             .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(.black)
+            .foregroundStyle(theme.isLight ? Color.white : Color.black)
             .padding(.horizontal, 16)
             .padding(.vertical, 6)
-            .background(Color.white)
+            .background(theme.isLight ? theme.accent : Color.white)
             .clipShape(Capsule())
-            .shadow(color: Color.white.opacity(0.2), radius: 8, y: 2)
+            .shadow(color: theme.accent.opacity(0.25), radius: 8, y: 2)
             .keyboardShortcut(.defaultAction)
         }
         .padding(.horizontal, 20)
@@ -136,13 +141,13 @@ struct AlarmEditView: View {
     private var timeSculptorSection: some View {
         VStack(spacing: 12) {
             HStack(spacing: 14) {
-                // 디지털 시계 디스플레이
+                // 디지털 시계 박스
                 HStack(spacing: 2) {
                     TextField("", value: $hour12, format: .number)
                         .frame(width: 64)
                     Text(":")
                         .font(.system(size: 46, weight: .ultraLight, design: .rounded))
-                        .foregroundStyle(MatutaTheme.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                         .offset(y: -2)
                     TextField("", value: $alarm.minute, format: .number)
                         .frame(width: 64)
@@ -151,24 +156,24 @@ struct AlarmEditView: View {
                 .font(.system(size: 48, weight: .light, design: .rounded))
                 .monospacedDigit()
                 .multilineTextAlignment(.center)
-                .foregroundStyle(MatutaTheme.textPrimary)
+                .foregroundStyle(theme.textPrimary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(MatutaTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(theme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(MatutaTheme.subtleStroke, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(theme.subtleStroke, lineWidth: 1)
                 )
 
-                // AM / PM 토글 바
+                // AM / PM 토글
                 VStack(spacing: 4) {
                     Button(action: { isPM = false; syncTime24() }) {
                         Text("AM")
                             .font(.system(size: 12, weight: !isPM ? .bold : .medium))
-                            .frame(width: 44, height: 28)
-                            .background(!isPM ? MatutaTheme.primaryAccent : Color.white.opacity(0.06))
-                            .foregroundStyle(!isPM ? Color.white : MatutaTheme.textSecondary)
+                            .frame(width: 46, height: 28)
+                            .background(!isPM ? theme.accent : (theme.isLight ? Color.black.opacity(0.06) : Color.white.opacity(0.06)))
+                            .foregroundStyle(!isPM ? Color.white : theme.textSecondary)
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                     .buttonStyle(.plain)
@@ -176,16 +181,16 @@ struct AlarmEditView: View {
                     Button(action: { isPM = true; syncTime24() }) {
                         Text("PM")
                             .font(.system(size: 12, weight: isPM ? .bold : .medium))
-                            .frame(width: 44, height: 28)
-                            .background(isPM ? MatutaTheme.primaryAccent : Color.white.opacity(0.06))
-                            .foregroundStyle(isPM ? Color.white : MatutaTheme.textSecondary)
+                            .frame(width: 46, height: 28)
+                            .background(isPM ? theme.accent : (theme.isLight ? Color.black.opacity(0.06) : Color.white.opacity(0.06)))
+                            .foregroundStyle(isPM ? Color.white : theme.textSecondary)
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                     .buttonStyle(.plain)
                 }
             }
 
-            // 퀵 타임 프리셋 칩
+            // 퀵 타임 칩
             HStack(spacing: 6) {
                 quickTimeChip("06:30", h: 6, m: 30, pm: false)
                 quickTimeChip("07:00", h: 7, m: 0, pm: false)
@@ -212,12 +217,12 @@ struct AlarmEditView: View {
         }) {
             Text(label)
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundStyle(MatutaTheme.textSecondary)
+                .foregroundStyle(theme.textSecondary)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 4)
-                .background(Color.white.opacity(0.05))
+                .background(theme.cardBackground)
                 .clipShape(Capsule())
-                .overlay(Capsule().strokeBorder(MatutaTheme.subtleStroke, lineWidth: 1))
+                .overlay(Capsule().strokeBorder(theme.subtleStroke, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }
@@ -229,9 +234,7 @@ struct AlarmEditView: View {
             HStack {
                 Text("반복")
                     .font(.system(size: 11, weight: .bold))
-                    .textCase(.uppercase)
-                    .tracking(1.0)
-                    .foregroundStyle(MatutaTheme.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
 
                 Spacer()
 
@@ -256,12 +259,12 @@ struct AlarmEditView: View {
                         Text(day.shortName)
                             .font(.system(size: 12, weight: isSelected ? .bold : .medium))
                             .frame(maxWidth: .infinity, minHeight: 34)
-                            .background(isSelected ? MatutaTheme.primaryAccent : MatutaTheme.cardBackground)
-                            .foregroundStyle(isSelected ? Color.white : MatutaTheme.textSecondary)
-                            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            .background(isSelected ? theme.accent : theme.cardBackground)
+                            .foregroundStyle(isSelected ? Color.white : theme.textSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                    .strokeBorder(isSelected ? Color.clear : MatutaTheme.subtleStroke, lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(isSelected ? Color.clear : theme.subtleStroke, lineWidth: 1)
                             )
                     }
                     .buttonStyle(.plain)
@@ -274,10 +277,10 @@ struct AlarmEditView: View {
         Button(action: { alarm.weekdays = days }) {
             Text(title)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(MatutaTheme.textTertiary)
+                .foregroundStyle(theme.textTertiary)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2.5)
-                .background(Color.white.opacity(0.04))
+                .background(theme.cardBackground)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -289,40 +292,44 @@ struct AlarmEditView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("라벨")
                 .font(.system(size: 11, weight: .bold))
-                .textCase(.uppercase)
-                .tracking(1.0)
-                .foregroundStyle(MatutaTheme.textSecondary)
+                .foregroundStyle(theme.textSecondary)
 
-            TextField("알람 이름 (예: 기상, 출근, 모닝 루틴)", text: Binding(
+            TextField("알람 이름 (예: 상쾌한 아침, 커피 타임, 출근)", text: Binding(
                 get: { alarm.label ?? "" },
                 set: { alarm.label = $0.isEmpty ? nil : $0 }
             ))
             .textFieldStyle(.plain)
             .font(.system(size: 13))
-            .foregroundStyle(MatutaTheme.textPrimary)
+            .foregroundStyle(theme.textPrimary)
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
-            .background(MatutaTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(theme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .strokeBorder(MatutaTheme.subtleStroke, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(theme.subtleStroke, lineWidth: 1)
             )
         }
     }
 
-    // MARK: - 4. Sound Studio Deck
+    // MARK: - 4. Sound Deck (Icon-Only Minimal Bar)
 
     private var soundDeckSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("사운드")
-                .font(.system(size: 11, weight: .bold))
-                .textCase(.uppercase)
-                .tracking(1.0)
-                .foregroundStyle(MatutaTheme.textSecondary)
+            HStack {
+                Text("사운드")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(theme.textSecondary)
 
-            // 세그먼트 탭
-            HStack(spacing: 2) {
+                Spacer()
+
+                Text(selectedTab.rawValue)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(theme.accent)
+            }
+
+            // 아이콘 전용 사운드 바 (글씨 없음)
+            HStack(spacing: 4) {
                 ForEach(SourceTab.allCases) { tab in
                     let isSelected = selectedTab == tab
                     Button(action: {
@@ -330,37 +337,33 @@ struct AlarmEditView: View {
                         stopPreview()
                         syncAlarmSource()
                     }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 10))
-                            Text(tab.rawValue)
-                                .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6.5)
-                        .background(isSelected ? MatutaTheme.primaryAccent : Color.clear)
-                        .foregroundStyle(isSelected ? Color.white : MatutaTheme.textSecondary)
-                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                            .frame(maxWidth: .infinity, minHeight: 34)
+                            .background(isSelected ? theme.accent : Color.clear)
+                            .foregroundStyle(isSelected ? Color.white : theme.textSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                     }
                     .buttonStyle(.plain)
+                    .help(tab.rawValue)
                 }
             }
-            .padding(2.5)
-            .background(MatutaTheme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .padding(3)
+            .background(theme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .strokeBorder(MatutaTheme.subtleStroke, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(theme.subtleStroke, lineWidth: 1)
             )
 
-            // 탭별 인터랙티브 카드
+            // 탭별 콘텐츠 카드
             soundCardContent
                 .padding(14)
-                .background(MatutaTheme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(theme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(isDropTargeted ? MatutaTheme.primaryAccent : MatutaTheme.subtleStroke, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(isDropTargeted ? theme.accent : theme.subtleStroke, lineWidth: 1)
                 )
         }
     }
@@ -391,10 +394,10 @@ struct AlarmEditView: View {
                             Text(isPreviewing ? "정지" : "미리듣기")
                                 .font(.system(size: 11, weight: .bold))
                         }
-                        .foregroundStyle(isPreviewing ? Color.black : Color.white)
+                        .foregroundStyle(isPreviewing ? Color.white : theme.textPrimary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 5.5)
-                        .background(isPreviewing ? MatutaTheme.sunriseAmber : Color.white.opacity(0.1))
+                        .background(isPreviewing ? theme.accent : (theme.isLight ? Color.black.opacity(0.06) : Color.white.opacity(0.1)))
                         .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -402,19 +405,19 @@ struct AlarmEditView: View {
 
                 Text("네트워크나 파일 손상 없이 언제든 100% 울리는 순수 합성 파형입니다.")
                     .font(.system(size: 11))
-                    .foregroundStyle(MatutaTheme.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
 
         case .file:
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    Image(systemName: "waveform")
+                    Image(systemName: "music.note")
                         .font(.system(size: 14))
-                        .foregroundStyle(MatutaTheme.electricCyan)
+                        .foregroundStyle(theme.accent)
 
                     Text(localFileName.isEmpty ? "선택된 음악 파일 없음" : localFileName)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(MatutaTheme.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
                         .lineLimit(1)
                         .truncationMode(.middle)
 
@@ -425,16 +428,16 @@ struct AlarmEditView: View {
                     }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 11)
+                    .foregroundStyle(Color.white)
+                    .padding(.horizontal, 12)
                     .padding(.vertical, 5)
-                    .background(MatutaTheme.primaryAccent)
+                    .background(theme.accent)
                     .clipShape(Capsule())
                 }
 
                 Text("MP3, M4A, WAV 등 원하는 음악 파일을 이 창으로 직접 끌어다 놓아도 됩니다.")
                     .font(.system(size: 11))
-                    .foregroundStyle(MatutaTheme.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
             .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
                 handleFileDrop(providers)
@@ -446,7 +449,7 @@ struct AlarmEditView: View {
                     TextField("Spotify 링크 또는 URI", text: $spotifyInput)
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
-                        .foregroundStyle(MatutaTheme.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
                         .onChange(of: spotifyInput) { _, _ in syncAlarmSource() }
 
                     if let clip = NSPasteboard.general.string(forType: .string), clip.contains("spotify") {
@@ -456,15 +459,15 @@ struct AlarmEditView: View {
                         }
                         .buttonStyle(.plain)
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(MatutaTheme.neonGreen)
+                        .foregroundStyle(theme.accent)
                     }
                 }
                 .padding(8)
-                .background(Color.white.opacity(0.04))
+                .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.04))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 HStack(spacing: 4) {
-                    Text("추천:").font(.system(size: 10)).foregroundStyle(MatutaTheme.textTertiary)
+                    Text("추천:").font(.system(size: 10)).foregroundStyle(theme.textTertiary)
                     presetChip("Top 50", text: "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M")
                     presetChip("어쿠스틱", text: "spotify:playlist:37i9dQZF1DX2MyUCdfq5Dg")
                     presetChip("Lofi Beats", text: "spotify:playlist:37i9dQZF1DXdLEN7aqioXM")
@@ -472,7 +475,7 @@ struct AlarmEditView: View {
 
                 Text("Spotify 실행과 동시에 Radar 백업음이 함께 재생되어 무음 실패를 방지합니다.")
                     .font(.system(size: 11))
-                    .foregroundStyle(MatutaTheme.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
 
         case .web:
@@ -481,7 +484,7 @@ struct AlarmEditView: View {
                     TextField("YouTube 영상/라이브 링크 또는 웹 URL", text: $webInput)
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
-                        .foregroundStyle(MatutaTheme.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
                         .onChange(of: webInput) { _, _ in syncAlarmSource() }
 
                     if let clip = NSPasteboard.general.string(forType: .string), clip.contains("http") {
@@ -491,15 +494,15 @@ struct AlarmEditView: View {
                         }
                         .buttonStyle(.plain)
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(MatutaTheme.sunriseOrange)
+                        .foregroundStyle(theme.accent)
                     }
                 }
                 .padding(8)
-                .background(Color.white.opacity(0.04))
+                .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.04))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 HStack(spacing: 4) {
-                    Text("추천:").font(.system(size: 10)).foregroundStyle(MatutaTheme.textTertiary)
+                    Text("추천:").font(.system(size: 10)).foregroundStyle(theme.textTertiary)
                     webPresetChip("Lofi Girl", url: "https://www.youtube.com/watch?v=jfKfPfyJRdk")
                     webPresetChip("카페 재즈", url: "https://www.youtube.com/watch?v=DXUAyRRkI6k")
                     webPresetChip("빗소리", url: "https://www.youtube.com/watch?v=mPZkdNFkNps")
@@ -507,7 +510,7 @@ struct AlarmEditView: View {
 
                 Text("알람 시각에 브라우저가 열리며 화면의 [알람 끄기] 버튼으로 즉시 해제할 수 있습니다.")
                     .font(.system(size: 11))
-                    .foregroundStyle(MatutaTheme.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
 
         case .radio:
@@ -515,14 +518,14 @@ struct AlarmEditView: View {
                 TextField("라디오 스트림 URL", text: $radioInput)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
-                    .foregroundStyle(MatutaTheme.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .padding(8)
-                    .background(Color.white.opacity(0.04))
+                    .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.04))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .onChange(of: radioInput) { _, _ in syncAlarmSource() }
 
                 HStack(spacing: 4) {
-                    Text("추천:").font(.system(size: 10)).foregroundStyle(MatutaTheme.textTertiary)
+                    Text("추천:").font(.system(size: 10)).foregroundStyle(theme.textTertiary)
                     radioPresetChip("Paradise", url: "https://stream.radioparadise.com/aac-320")
                     radioPresetChip("Mellow", url: "https://stream.radioparadise.com/mellow-aac-320")
                     radioPresetChip("Classic", url: "https://icecast.vrt.be/klara-high.mp3")
@@ -530,7 +533,7 @@ struct AlarmEditView: View {
 
                 Text("스트림 연결 실패 시 즉시 Radar 백업음으로 자동 대체됩니다.")
                     .font(.system(size: 11))
-                    .foregroundStyle(MatutaTheme.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
 
         case .appleMusic:
@@ -538,15 +541,15 @@ struct AlarmEditView: View {
                 TextField("Apple Music 앨범/트랙 URL", text: $appleMusicInput)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
-                    .foregroundStyle(MatutaTheme.textPrimary)
+                    .foregroundStyle(theme.textPrimary)
                     .padding(8)
-                    .background(Color.white.opacity(0.04))
+                    .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.04))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .onChange(of: appleMusicInput) { _, _ in syncAlarmSource() }
 
                 Text("Music 앱과 연동되어 정해진 시간에 재생을 시작합니다.")
                     .font(.system(size: 11))
-                    .foregroundStyle(MatutaTheme.textSecondary)
+                    .foregroundStyle(theme.textSecondary)
             }
         }
     }
@@ -554,75 +557,82 @@ struct AlarmEditView: View {
     // MARK: - 5. Volume & Dynamics
 
     private var volumeOptionsSection: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             // 볼륨 슬라이더
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("볼륨")
                         .font(.system(size: 11, weight: .bold))
-                        .textCase(.uppercase)
-                        .tracking(1.0)
-                        .foregroundStyle(MatutaTheme.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
 
                     Spacer()
 
                     Text("\(Int(alarm.volume * 100))%")
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundStyle(MatutaTheme.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
                 }
 
                 HStack(spacing: 10) {
                     Image(systemName: "speaker.fill")
                         .font(.system(size: 11))
-                        .foregroundStyle(MatutaTheme.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
 
-                    Slider(value: $alarm.volume, in: 0...1)
-                        .tint(MatutaTheme.primaryAccent)
+                    Slider(value: $alarm.volume, in: 0...1) { _ in
+                        // 슬라이더 조작 시 0.25초 간격으로 볼륨 크기 피드백
+                        if Date().timeIntervalSince(lastVolumeFeedbackTime) > 0.25 {
+                            lastVolumeFeedbackTime = Date()
+                            previewPlayer.start(pattern: .beacon, volume: alarm.volume, fadeIn: false)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                if !isPreviewing { previewPlayer.stop() }
+                            }
+                        }
+                    }
+                    .tint(theme.accent)
 
                     Image(systemName: "speaker.wave.3.fill")
                         .font(.system(size: 11))
-                        .foregroundStyle(MatutaTheme.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
 
-            Divider().opacity(0.15)
+            Divider().opacity(theme.isLight ? 0.08 : 0.12)
 
             // 토글 옵션들
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("서서히 커지기 (점진적 페이드인)")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(MatutaTheme.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
                     Text("낮은 볼륨에서 설정 볼륨까지 30초간 부드럽게 상승")
                         .font(.system(size: 10))
-                        .foregroundStyle(MatutaTheme.textTertiary)
+                        .foregroundStyle(theme.textTertiary)
                 }
                 Spacer()
-                MatutaToggle(isOn: $alarm.fadeIn)
+                CozyToggle(isOn: $alarm.fadeIn, accent: theme.accent)
             }
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("스누즈 (9분)")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(MatutaTheme.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
                     Text("알람 울릴 때 9분 뒤 다시 울림 허용")
                         .font(.system(size: 10))
-                        .foregroundStyle(MatutaTheme.textTertiary)
+                        .foregroundStyle(theme.textTertiary)
                 }
                 Spacer()
-                MatutaToggle(isOn: Binding(
+                CozyToggle(isOn: Binding(
                     get: { alarm.snoozeMinutes != nil },
                     set: { alarm.snoozeMinutes = $0 ? 9 : nil }
-                ))
+                ), accent: theme.accent)
             }
         }
         .padding(14)
-        .background(MatutaTheme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(theme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(MatutaTheme.subtleStroke, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(theme.subtleStroke, lineWidth: 1)
         )
     }
 
@@ -635,10 +645,10 @@ struct AlarmEditView: View {
         }) {
             Text(title)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(MatutaTheme.textSecondary)
+                .foregroundStyle(theme.textSecondary)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2.5)
-                .background(Color.white.opacity(0.06))
+                .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.06))
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -651,10 +661,10 @@ struct AlarmEditView: View {
         }) {
             Text(title)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(MatutaTheme.textSecondary)
+                .foregroundStyle(theme.textSecondary)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2.5)
-                .background(Color.white.opacity(0.06))
+                .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.06))
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -667,10 +677,10 @@ struct AlarmEditView: View {
         }) {
             Text(title)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(MatutaTheme.textSecondary)
+                .foregroundStyle(theme.textSecondary)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2.5)
-                .background(Color.white.opacity(0.06))
+                .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.06))
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)

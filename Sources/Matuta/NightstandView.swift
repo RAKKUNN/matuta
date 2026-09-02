@@ -12,24 +12,28 @@ struct NightstandView: View {
     @State private var idleTimer: Timer?
     @State private var isCloseHovered: Bool = false
 
+    private var theme: CozyTheme {
+        ThemeManager.shared.current
+    }
+
     private let engine = PreflightEngine()
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
-            // 저자극 딥 옵시디언 배경
-            Color(red: 0.03, green: 0.03, blue: 0.04).ignoresSafeArea()
+            // 저자극 딥 앰비언트 배경
+            theme.baseBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // 상단 컨트롤 바 (마우스 조작 시 페이드인)
                 HStack {
                     HStack(spacing: 6) {
-                        Image(systemName: "moon.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(MatutaTheme.sunriseAmber)
-                        Text("NIGHTSTAND")
+                        Image(systemName: theme.themeIcon)
+                            .font(.system(size: 13))
+                            .foregroundStyle(theme.accent)
+                        Text(theme.rawValue.uppercased())
                             .font(.system(size: 11, weight: .bold))
-                            .tracking(2.0)
+                            .tracking(1.5)
                             .foregroundStyle(Color.white.opacity(0.5))
                     }
                     Spacer()
@@ -65,14 +69,14 @@ struct NightstandView: View {
                         .font(.system(size: 136, weight: .ultraLight, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Color.white.opacity(0.92))
-                        .shadow(color: Color.white.opacity(0.08), radius: 30, y: 0)
+                        .shadow(color: theme.accent.opacity(0.12), radius: 30, y: 0)
 
                     // 다음 알람 및 카운트다운
                     if let next = nextFireDate {
                         HStack(spacing: 8) {
                             Image(systemName: "alarm.fill")
                                 .font(.system(size: 12))
-                                .foregroundStyle(MatutaTheme.sunriseOrange)
+                                .foregroundStyle(theme.accent)
 
                             Text("다음 알람: \(next.formatted(date: .omitted, time: .shortened))")
                                 .font(.system(size: 15, weight: .medium))
@@ -103,9 +107,9 @@ struct NightstandView: View {
 
                 // 하단 3중 방어선 상태 표시줄
                 HStack(spacing: 18) {
-                    guardItem(icon: "speaker.wave.2.fill", label: "내장 스피커 보호", color: MatutaTheme.electricCyan)
-                    guardItem(icon: "bolt.fill", label: "절전 깨우기 예약됨", color: MatutaTheme.neonGreen)
-                    guardItem(icon: "shield.fill", label: "AudioGuard 활성", color: MatutaTheme.primaryAccent)
+                    guardItem(icon: "speaker.wave.2.fill", label: "내장 스피커 보호", color: theme.accent)
+                    guardItem(icon: "bolt.fill", label: "절전 깨우기 예약됨", color: theme.accent)
+                    guardItem(icon: "shield.fill", label: "AudioGuard 활성", color: theme.accent)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)

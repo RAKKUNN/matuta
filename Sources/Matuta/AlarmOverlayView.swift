@@ -12,28 +12,31 @@ struct AlarmOverlayView: View {
     @State private var isSnoozeHovered = false
     @State private var pulseAura = false
 
+    private var theme: CozyTheme {
+        ThemeManager.shared.current
+    }
+
     private let tick = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack {
-            // 깊고 몽환적인 새벽빛 오라 배경
+            // 포근한 새벽빛/모닥불 앰비언트 배경
             ambientBackground
 
             VStack(spacing: 0) {
                 Spacer()
 
-                // 초대형 정밀 디지털 시계
+                // 대형 디지털 시계
                 VStack(spacing: 8) {
                     Text(now, format: .dateTime.hour().minute())
                         .font(.system(size: 124, weight: .ultraLight, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Color.white)
-                        .shadow(color: MatutaTheme.sunriseOrange.opacity(pulseAura ? 0.35 : 0.15), radius: 30, y: 10)
+                        .shadow(color: theme.accent.opacity(pulseAura ? 0.35 : 0.15), radius: 30, y: 10)
 
                     // 알람 라벨
-                    Text(alarm.label?.uppercased() ?? "WAKE UP")
-                        .font(.system(size: 18, weight: .medium, design: .default))
-                        .tracking(3.5)
+                    Text(alarm.label ?? "기분 좋은 아침")
+                        .font(.system(size: 20, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.white.opacity(0.85))
                         .padding(.top, 4)
 
@@ -54,7 +57,6 @@ struct AlarmOverlayView: View {
 
                             Text("알람 끄기")
                                 .font(.system(size: 17, weight: .bold))
-                                .tracking(0.5)
 
                             HStack(spacing: 3) {
                                 Image(systemName: "space")
@@ -77,7 +79,7 @@ struct AlarmOverlayView: View {
                             Capsule()
                                 .strokeBorder(Color.white.opacity(0.9), lineWidth: 1.5)
                         )
-                        .shadow(color: Color.white.opacity(isDismissHovered ? 0.5 : 0.25), radius: isDismissHovered ? 28 : 16, y: 6)
+                        .shadow(color: theme.accent.opacity(isDismissHovered ? 0.45 : 0.20), radius: isDismissHovered ? 28 : 16, y: 6)
                         .scaleEffect(isDismissHovered ? 1.03 : 1.0)
                     }
                     .buttonStyle(.plain)
@@ -134,12 +136,12 @@ struct AlarmOverlayView: View {
 
     private var ambientBackground: some View {
         ZStack {
-            MatutaTheme.baseBackground.ignoresSafeArea()
+            theme.baseBackground.ignoresSafeArea()
 
             RadialGradient(
                 colors: [
-                    MatutaTheme.sunriseOrange.opacity(pulseAura ? 0.35 : 0.20),
-                    MatutaTheme.primaryAccent.opacity(pulseAura ? 0.25 : 0.15),
+                    theme.accent.opacity(pulseAura ? 0.35 : 0.20),
+                    theme.cardBackground.opacity(pulseAura ? 0.25 : 0.15),
                     Color.clear
                 ],
                 center: .init(x: 0.5, y: 0.35),
@@ -158,7 +160,6 @@ struct AlarmOverlayView: View {
 
             Text(activeSourceName.isEmpty ? defaultSourceText : activeSourceName)
                 .font(.system(size: 12, weight: .semibold))
-                .tracking(0.3)
         }
         .foregroundStyle(Color.white.opacity(0.9))
         .padding(.horizontal, 14)
@@ -174,28 +175,28 @@ struct AlarmOverlayView: View {
     private var sourceIcon: some View {
         switch alarm.source {
         case .builtIn:
-            Image(systemName: "bell.fill").foregroundStyle(MatutaTheme.sunriseAmber)
+            Image(systemName: "bell.fill").foregroundStyle(theme.accent)
         case .localFile:
-            Image(systemName: "music.note").foregroundStyle(MatutaTheme.electricCyan)
+            Image(systemName: "music.note").foregroundStyle(theme.accent)
         case .streamURL:
-            Image(systemName: "antenna.radiowaves.left.and.right").foregroundStyle(MatutaTheme.sunriseOrange)
+            Image(systemName: "antenna.radiowaves.left.and.right").foregroundStyle(theme.accent)
         case .appleMusic:
-            Image(systemName: "apple.logo").foregroundStyle(MatutaTheme.sunsetPink)
+            Image(systemName: "apple.logo").foregroundStyle(theme.accent)
         case .spotify:
-            Image(systemName: "waveform").foregroundStyle(MatutaTheme.neonGreen)
+            Image(systemName: "waveform").foregroundStyle(theme.accent)
         case .web:
-            Image(systemName: "play.rectangle.fill").foregroundStyle(.red)
+            Image(systemName: "play.rectangle.fill").foregroundStyle(theme.accent)
         }
     }
 
     private var defaultSourceText: String {
         switch alarm.source {
-        case .builtIn(let name): "Radar (\(name))"
-        case .localFile: "Local Audio File"
-        case .streamURL(let url): url.host ?? "Live Radio"
+        case .builtIn(let name): name
+        case .localFile: "음악 파일"
+        case .streamURL(let url): url.host ?? "라디오"
         case .appleMusic: "Apple Music"
         case .spotify: "Spotify"
-        case .web(let url): url.host ?? "Web Stream"
+        case .web(let url): url.host ?? "웹"
         }
     }
 }

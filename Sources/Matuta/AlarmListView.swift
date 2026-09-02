@@ -4,16 +4,25 @@ import MatutaCore
 struct AlarmListView: View {
     @Bindable var model: AlarmListModel
 
+    private var theme: CozyTheme {
+        ThemeManager.shared.current
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // 상단 헤더
             headerView
                 .padding(.horizontal, 22)
-                .padding(.top, 20)
-                .padding(.bottom, 14)
+                .padding(.top, 18)
+                .padding(.bottom, 12)
+
+            // 포근한 퀵 파워냅 바
+            quickNapBar
+                .padding(.horizontal, 22)
+                .padding(.bottom, 12)
 
             Divider()
-                .opacity(0.12)
+                .opacity(theme.isLight ? 0.08 : 0.12)
 
             // 알람 카드 갤러리
             if model.alarms.isEmpty {
@@ -36,7 +45,7 @@ struct AlarmListView: View {
             }
 
             Divider()
-                .opacity(0.12)
+                .opacity(theme.isLight ? 0.08 : 0.12)
 
             // 하단 상태 및 액션 바
             footerView
@@ -44,7 +53,7 @@ struct AlarmListView: View {
                 .padding(.vertical, 14)
         }
         .frame(minWidth: 380, idealWidth: 460, maxWidth: .infinity, minHeight: 440, idealHeight: 620, maxHeight: .infinity)
-        .background(MatutaTheme.baseBackground)
+        .background(theme.baseBackground)
         .onAppear {
             DispatchQueue.main.async {
                 if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "alarms" || $0.title == "알람" }) {
@@ -64,6 +73,8 @@ struct AlarmListView: View {
         }
     }
 
+    // MARK: - Header
+
     private var headerView: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 3) {
@@ -71,36 +82,66 @@ struct AlarmListView: View {
                     Text("MATUTA")
                         .font(.system(size: 11, weight: .bold))
                         .tracking(2.5)
-                        .foregroundStyle(MatutaTheme.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
 
                     Circle()
-                        .fill(MatutaTheme.neonGreen)
+                        .fill(theme.accent)
                         .frame(width: 5, height: 5)
                 }
 
                 if let next = model.nextFireDate {
                     Text("다음 알람 \(next.formatted(date: .omitted, time: .shortened))")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(MatutaTheme.textPrimary)
+                        .foregroundStyle(theme.textPrimary)
                 } else {
                     Text("켜진 알람 없음")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(MatutaTheme.textSecondary)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
 
             Spacer()
 
             HStack(spacing: 8) {
+                // 테마 선택 메뉴 (6종 Cozy 테마)
+                Menu {
+                    ForEach(CozyTheme.allCases) { t in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                ThemeManager.shared.current = t
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: t.themeIcon)
+                                Text(t.rawValue)
+                                if ThemeManager.shared.current == t {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "paintpalette.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(theme.accent)
+                        .frame(width: 34, height: 34)
+                        .background(theme.cardBackground)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(theme.subtleStroke, lineWidth: 1))
+                }
+                .menuStyle(.borderlessButton)
+                .frame(width: 34, height: 34)
+                .help("포근한 6종 테마 변경")
+
                 // 나이트스탠드 버튼
                 Button(action: { model.openNightstand() }) {
                     Image(systemName: "moon.fill")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(MatutaTheme.sunriseAmber)
+                        .foregroundStyle(theme.accent)
                         .frame(width: 34, height: 34)
-                        .background(MatutaTheme.cardBackground)
+                        .background(theme.cardBackground)
                         .clipShape(Circle())
-                        .overlay(Circle().strokeBorder(MatutaTheme.subtleStroke, lineWidth: 1))
+                        .overlay(Circle().strokeBorder(theme.subtleStroke, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
                 .help("나이트스탠드 (전체화면 침대 시계)")
@@ -111,7 +152,7 @@ struct AlarmListView: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(Color.white)
                         .frame(width: 34, height: 34)
-                        .background(MatutaTheme.primaryAccent)
+                        .background(theme.accent)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -120,16 +161,69 @@ struct AlarmListView: View {
         }
     }
 
+    // MARK: - Cozy Quick Nap Bar
+
+    private var quickNapBar: some View {
+        HStack(spacing: 8) {
+            quickNapChip(title: "20분 낮잠", minutes: 20, icon: "cup.and.saucer.fill")
+            quickNapChip(title: "45분 집중", minutes: 45, icon: "book.fill")
+            quickNapChip(title: "1시간 숙면", minutes: 60, icon: "moon.zzz.fill")
+            Spacer()
+        }
+    }
+
+    private func quickNapChip(title: String, minutes: Int, icon: String) -> some View {
+        Button(action: {
+            addQuickNap(minutes: minutes, label: title)
+        }) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                Text(title)
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .foregroundStyle(theme.textSecondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(theme.cardBackground)
+            .clipShape(Capsule())
+            .overlay(Capsule().strokeBorder(theme.subtleStroke, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func addQuickNap(minutes: Int, label: String) {
+        let target = Date().addingTimeInterval(Double(minutes) * 60)
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: target)
+        let minute = calendar.component(.minute, from: target)
+
+        let alarm = Alarm(
+            hour: hour,
+            minute: minute,
+            weekdays: [],
+            label: label,
+            source: .builtIn(name: "Ripple"),
+            volume: 0.8,
+            fadeIn: true,
+            snoozeMinutes: 9,
+            isEnabled: true
+        )
+        model.save(alarm)
+    }
+
+    // MARK: - Empty State
+
     private var emptyStateView: some View {
         VStack(spacing: 14) {
             Spacer()
             Image(systemName: "alarm")
                 .font(.system(size: 44, weight: .ultraLight))
-                .foregroundStyle(MatutaTheme.textTertiary)
+                .foregroundStyle(theme.textTertiary)
 
             Text("설정된 알람이 없습니다")
                 .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(MatutaTheme.textSecondary)
+                .foregroundStyle(theme.textSecondary)
 
             Button(action: { model.addAlarm() }) {
                 HStack(spacing: 6) {
@@ -140,8 +234,8 @@ struct AlarmListView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color.white)
-                .foregroundStyle(.black)
+                .background(theme.accent)
+                .foregroundStyle(Color.white)
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -149,12 +243,13 @@ struct AlarmListView: View {
         }
     }
 
+    // MARK: - Footer
+
     private var footerView: some View {
         HStack {
-            Text("\(model.alarms.count) ALARMS SCHEDULED")
-                .font(.system(size: 10, weight: .bold))
-                .tracking(1.5)
-                .foregroundStyle(MatutaTheme.textTertiary)
+            Text("\(model.alarms.count)개의 알람")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(theme.textTertiary)
 
             Spacer()
 
@@ -167,17 +262,17 @@ struct AlarmListView: View {
                 }
                 .padding(.horizontal, 15)
                 .padding(.vertical, 7)
-                .background(Color.white)
-                .foregroundStyle(.black)
+                .background(theme.accent)
+                .foregroundStyle(Color.white)
                 .clipShape(Capsule())
-                .shadow(color: Color.white.opacity(0.15), radius: 6, y: 2)
+                .shadow(color: theme.accent.opacity(0.2), radius: 6, y: 2)
             }
             .buttonStyle(.plain)
         }
     }
 }
 
-// MARK: - 장인 수준의 아티잔 알람 카드
+// MARK: - 아티잔 알람 카드
 
 private struct ArtisanAlarmCard: View {
     let alarm: Alarm
@@ -186,6 +281,10 @@ private struct ArtisanAlarmCard: View {
     let onDelete: () -> Void
 
     @State private var isHovered = false
+
+    private var theme: CozyTheme {
+        ThemeManager.shared.current
+    }
 
     var body: some View {
         Button(action: onEdit) {
@@ -196,11 +295,11 @@ private struct ArtisanAlarmCard: View {
                         Text(timeNumberString)
                             .font(.system(size: 38, weight: .light, design: .rounded))
                             .monospacedDigit()
-                            .foregroundStyle(alarm.isEnabled ? MatutaTheme.textPrimary : MatutaTheme.textTertiary)
+                            .foregroundStyle(alarm.isEnabled ? theme.textPrimary : theme.textTertiary)
 
                         Text(periodString)
                             .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(alarm.isEnabled ? MatutaTheme.textSecondary : MatutaTheme.textTertiary)
+                            .foregroundStyle(alarm.isEnabled ? theme.textSecondary : theme.textTertiary)
                     }
 
                     // 요일 미니 인디케이터
@@ -210,15 +309,15 @@ private struct ArtisanAlarmCard: View {
                             Text(day.shortName)
                                 .font(.system(size: 9, weight: isActive ? .bold : .medium))
                                 .frame(width: 18, height: 18)
-                                .background(isActive ? (alarm.isEnabled ? MatutaTheme.primaryAccent : Color.white.opacity(0.15)) : Color.clear)
-                                .foregroundStyle(isActive ? Color.white : MatutaTheme.textTertiary)
+                                .background(isActive ? (alarm.isEnabled ? theme.accent : Color.gray.opacity(0.2)) : Color.clear)
+                                .foregroundStyle(isActive ? Color.white : theme.textTertiary)
                                 .clipShape(Circle())
                         }
 
                         if alarm.weekdays.isEmpty {
                             Text("1회성")
                                 .font(.system(size: 10, weight: .medium))
-                                .foregroundStyle(MatutaTheme.textTertiary)
+                                .foregroundStyle(theme.textTertiary)
                                 .padding(.leading, 4)
                         }
                     }
@@ -228,7 +327,7 @@ private struct ArtisanAlarmCard: View {
                         if let label = alarm.label, !label.isEmpty {
                             Text(label)
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(MatutaTheme.textPrimary)
+                                .foregroundStyle(theme.textPrimary)
                         }
 
                         sourcePill
@@ -237,23 +336,23 @@ private struct ArtisanAlarmCard: View {
 
                 Spacer()
 
-                // 커스텀 정밀 토글 스위치
-                MatutaToggle(isOn: Binding(
+                // 커스텀 Cozy 스위치
+                CozyToggle(isOn: Binding(
                     get: { alarm.isEnabled },
                     set: { _ in onToggle() }
-                ))
+                ), accent: theme.accent)
             }
             .frame(maxWidth: .infinity)
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isHovered ? MatutaTheme.cardBackgroundHover : MatutaTheme.cardBackground)
+                    .fill(isHovered ? theme.cardBackgroundHover : theme.cardBackground)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(isHovered ? MatutaTheme.highlightStroke : MatutaTheme.subtleStroke, lineWidth: 1)
+                    .strokeBorder(isHovered ? theme.highlightStroke : theme.subtleStroke, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(isHovered ? 0.35 : 0.15), radius: isHovered ? 10 : 4, y: 2)
+            .shadow(color: Color.black.opacity(theme.isLight ? 0.04 : 0.2), radius: isHovered ? 8 : 3, y: 2)
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
@@ -282,26 +381,26 @@ private struct ArtisanAlarmCard: View {
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 3)
-        .background(Color.white.opacity(0.06))
+        .background(theme.isLight ? Color.black.opacity(0.04) : Color.white.opacity(0.06))
         .clipShape(Capsule())
-        .foregroundStyle(MatutaTheme.textSecondary)
+        .foregroundStyle(theme.textSecondary)
     }
 
     @ViewBuilder
     private var sourceIcon: some View {
         switch alarm.source {
         case .builtIn:
-            Image(systemName: "bell.fill").foregroundStyle(MatutaTheme.sunriseAmber)
+            Image(systemName: "bell.fill").foregroundStyle(theme.accent)
         case .localFile:
-            Image(systemName: "music.note").foregroundStyle(MatutaTheme.electricCyan)
+            Image(systemName: "music.note").foregroundStyle(theme.accent)
         case .streamURL:
-            Image(systemName: "antenna.radiowaves.left.and.right").foregroundStyle(MatutaTheme.sunriseOrange)
+            Image(systemName: "antenna.radiowaves.left.and.right").foregroundStyle(theme.accent)
         case .appleMusic:
-            Image(systemName: "apple.logo").foregroundStyle(MatutaTheme.sunsetPink)
+            Image(systemName: "apple.logo").foregroundStyle(theme.accent)
         case .spotify:
-            Image(systemName: "waveform").foregroundStyle(MatutaTheme.neonGreen)
+            Image(systemName: "waveform").foregroundStyle(theme.accent)
         case .web:
-            Image(systemName: "play.rectangle.fill").foregroundStyle(.red)
+            Image(systemName: "play.rectangle.fill").foregroundStyle(theme.accent)
         }
     }
 
