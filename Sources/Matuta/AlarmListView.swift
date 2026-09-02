@@ -8,8 +8,8 @@ struct AlarmListView: View {
         VStack(spacing: 0) {
             // 상단 헤더
             headerView
-                .padding(.horizontal, 20)
-                .padding(.top, 18)
+                .padding(.horizontal, 22)
+                .padding(.top, 20)
                 .padding(.bottom, 14)
 
             Divider()
@@ -31,7 +31,7 @@ struct AlarmListView: View {
                             }
                         }
                     }
-                    .padding(18)
+                    .padding(20)
                 }
             }
 
@@ -40,11 +40,18 @@ struct AlarmListView: View {
 
             // 하단 상태 및 액션 바
             footerView
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 22)
                 .padding(.vertical, 14)
         }
-        .frame(minWidth: 400, maxWidth: 460, minHeight: 480, maxHeight: 640)
+        .frame(minWidth: 380, idealWidth: 460, maxWidth: .infinity, minHeight: 440, idealHeight: 620, maxHeight: .infinity)
         .background(MatutaTheme.baseBackground)
+        .onAppear {
+            DispatchQueue.main.async {
+                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "alarms" || $0.title == "알람" }) {
+                    window.center()
+                }
+            }
+        }
         .sheet(item: $model.editing) { alarm in
             AlarmEditView(
                 alarm: alarm,
@@ -236,6 +243,7 @@ private struct ArtisanAlarmCard: View {
                     set: { _ in onToggle() }
                 ))
             }
+            .frame(maxWidth: .infinity)
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)

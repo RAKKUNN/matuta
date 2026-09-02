@@ -3,9 +3,18 @@ import AppKit
 import MatutaCore
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        DispatchQueue.main.async {
+            for window in NSApp.windows where window.identifier?.rawValue == "alarms" || window.title == "알람" {
+                window.center()
+                window.minSize = NSSize(width: 380, height: 440)
+            }
+        }
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
-            for window in sender.windows where window.identifier?.rawValue == "alarms" {
+            for window in sender.windows where window.identifier?.rawValue == "alarms" || window.title == "알람" {
                 window.makeKeyAndOrderFront(nil)
                 return true
             }
@@ -24,6 +33,7 @@ struct MatutaApp: App {
         Window("알람", id: "alarms") {
             AlarmListView(model: model)
         }
+        .defaultSize(width: 440, height: 600)
         .windowResizability(.contentSize)
 
         MenuBarExtra(menuBarTitle) {
@@ -38,6 +48,9 @@ struct MatutaApp: App {
             Button("알람 창 열기") {
                 openWindow(id: "alarms")
                 NSApp.activate(ignoringOtherApps: true)
+                for window in NSApp.windows where window.identifier?.rawValue == "alarms" || window.title == "알람" {
+                    window.makeKeyAndOrderFront(nil)
+                }
             }
             Divider()
             if let next = model.nextFireDate {
