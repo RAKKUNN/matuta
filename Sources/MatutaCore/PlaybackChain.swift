@@ -2,13 +2,14 @@ import Foundation
 
 /// 소스 재생을 총괄하고, 실패 시 자동 폴백 및 미검증 소스 동시 재생을 담당하는 오케스트레이터.
 ///
-/// 설계 문서 §7.4:
-/// - 검증 가능한 소스 (내장, 로컬 파일, 스트림 URL, Apple Music) — 실패하면 백업음(Radar)으로 순차 폴백.
-/// - 검증 불가능한 소스 (Spotify, 웹) — 외부 앱/브라우저가 열리며, 내장 사운드를 낮은 볼륨으로 동시에 재생.
+/// 설계 문서 §7.4 & 진단서 2.B:
+/// - 세대 토큰(generation)을 도입하여 `start()` 비동기 실행 도중 `stop()`이 끼어들어도
+///   백업음이나 주 소스가 영구 재생되는 레이스 컨디션을 100% 방지한다.
 @MainActor
 public final class PlaybackChain {
     private var primarySource: SoundSource?
     private var backupSource: SoundSource?
+    private var generation: Int = 0
 
     public private(set) var isPlayingBackupConcurrently: Bool = false
     public private(set) var activeSourceName: String = ""
@@ -23,6 +24,9 @@ public final class PlaybackChain {
     ) async {
         stop()
 
+        generation += 1
+        let currentGen = generation
+
         self.primarySource = primary
         self.backupSource = backup
 
@@ -31,12 +35,25 @@ public final class PlaybackChain {
             isPlayingBackupConcurrently = true
             activeSourceName = "\(primary.displayName) (백업음 동시 재생)"
 
-            // 주 소스 실행 (Spotify 실행 / 웹 URL 오픈 등)
+            // 주 소스 실행 (Spotify / 웹 브라우저 등 지연 가능한 호출)
             try? await primary.play(volume: volume, fadeIn: fadeIn)
+
+            // 실행 중 stop()이 끼어들었거나 세대가 변경되었으면 즉시 정리 후 탈출
+            guard currentGen == self.generation else {
+                primary.stop()
+                backup.stop()
+                return
+            }
 
             // 백업음을 안전한 저볼륨(15~20%)으로 동시 재생
             let safeBackupVol = max(0.15 * volume, 0.1)
             try? await backup.play(volume: safeBackupVol, fadeIn: false)
+
+            guard currentGen == self.generation else {
+                primary.stop()
+                backup.stop()
+                return
+            }
         } else {
             // 검증 가능 소스: 주 소스 시도 후 실패 시 백업음으로 폴백
             isPlayingBackupConcurrently = false
@@ -44,14 +61,30 @@ public final class PlaybackChain {
 
             do {
                 try await primary.play(volume: volume, fadeIn: fadeIn)
+                guard currentGen == self.generation else {
+                    primary.stop()
+                    backup.stop()
+                    return
+                }
             } catch {
+                guard currentGen == self.generation else {
+                    primary.stop()
+                    backup.stop()
+                    return
+                }
                 activeSourceName = "\(backup.displayName) (폴백)"
                 try? await backup.play(volume: volume, fadeIn: fadeIn)
+                guard currentGen == self.generation else {
+                    primary.stop()
+                    backup.stop()
+                    return
+                }
             }
         }
     }
 
     public func stop() {
+        generation += 1
         primarySource?.stop()
         backupSource?.stop()
         primarySource = nil
