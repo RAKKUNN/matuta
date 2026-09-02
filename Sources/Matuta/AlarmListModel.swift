@@ -12,10 +12,10 @@ final class AlarmListModel {
     /// 지금 울리고 있는 알람. `nil`이면 오버레이가 안 떠 있다.
     var firing: Alarm?
 
-    /// 현재 스누즈 진행 중인 알람 정보
-    var snoozingAlarmID: UUID?
-    var snoozeUntil: Date?
+    /// 현재 스누즈 상태 (코어 모델)
+    var snoozeState: SnoozeState?
     private var snoozeTimer: Timer?
+    private var fireTask: Task<Void, Never>?
 
     private let store: AlarmStore
     private var scheduler: Scheduler?
@@ -30,8 +30,23 @@ final class AlarmListModel {
     init(store: AlarmStore = AlarmStore(fileURL: AlarmStore.defaultFileURL)) {
         self.store = store
 
-        let loaded = store.load()
-        alarms = loaded.isEmpty ? AlarmStore.seedAlarms : loaded
+        let payload = store.loadPayload()
+        let loadedAlarms = payload.alarms
+        self.alarms = loadedAlarms.isEmpty ? AlarmStore.seedAlarms : loadedAlarms
+
+        // 스누즈 복원 (유효한 경우 복원, 1분 이내 과거면 즉시 발화)
+        if let snooze = payload.snooze {
+            let now = Date()
+            if snooze.isValid(at: now) {
+                self.snoozeState = snooze
+                armSnoozeTimer(snooze)
+            } else if abs(snooze.fireAt.timeIntervalSince(now)) < 60, let alarm = self.alarms.first(where: { $0.id == snooze.alarmID }) {
+                // 앱 종료 중 스누즈 시각이 막 지난 경우 즉시 발화
+                DispatchQueue.main.async { [weak self] in
+                    self?.fire(alarm)
+                }
+            }
+        }
 
         scheduler = Scheduler(
             clock: SystemClock(),
@@ -45,23 +60,25 @@ final class AlarmListModel {
     }
 
     var nextFireDate: Date? {
-        if let snooze = snoozeUntil, snooze > Date() {
-            return snooze
-        }
-        return scheduler?.nextFire?.date
+        scheduler?.nextFire?.date
     }
 
     var nextAlarm: Alarm? {
-        if let snoozingID = snoozingAlarmID, let alarm = alarms.first(where: { $0.id == snoozingID }) {
-            return alarm
-        }
-        return scheduler?.nextFire?.alarm
+        scheduler?.nextFire?.alarm
+    }
+
+    var snoozingAlarmID: UUID? {
+        snoozeState?.alarmID
+    }
+
+    var snoozeUntil: Date? {
+        snoozeState?.fireAt
     }
 
     func toggle(_ alarm: Alarm) {
         guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
         alarms[index].isEnabled.toggle()
-        if !alarms[index].isEnabled && snoozingAlarmID == alarm.id {
+        if !alarms[index].isEnabled && snoozeState?.alarmID == alarm.id {
             cancelSnooze()
         }
         persist()
@@ -82,7 +99,7 @@ final class AlarmListModel {
     }
 
     func delete(_ alarm: Alarm) {
-        if snoozingAlarmID == alarm.id {
+        if snoozeState?.alarmID == alarm.id {
             cancelSnooze()
         }
         alarms.removeAll { $0.id == alarm.id }
@@ -96,6 +113,8 @@ final class AlarmListModel {
 
     /// 스페이스바 또는 마우스 클릭으로 알람을 완전히 껐을 때.
     func dismissFiring() {
+        fireTask?.cancel()
+        fireTask = nil
         playbackChain.stop()
         audioGuard.restore()
         powerManager.releaseSleepAssertion()
@@ -114,6 +133,8 @@ final class AlarmListModel {
     /// 스누즈. 마우스 클릭으로만 도달한다.
     func snoozeFiring() {
         guard let alarm = firing, let minutes = alarm.snoozeMinutes else { return }
+        fireTask?.cancel()
+        fireTask = nil
         playbackChain.stop()
         audioGuard.restore()
         powerManager.releaseSleepAssertion()
@@ -121,30 +142,41 @@ final class AlarmListModel {
         firing = nil
 
         let snoozeAt = Date().addingTimeInterval(Double(minutes) * 60)
-        self.snoozingAlarmID = alarm.id
-        self.snoozeUntil = snoozeAt
+        let newSnooze = SnoozeState(alarmID: alarm.id, fireAt: snoozeAt)
+        self.snoozeState = newSnooze
+        armSnoozeTimer(newSnooze)
 
-        snoozeTimer?.invalidate()
-        snoozeTimer = Timer.scheduledTimer(withTimeInterval: snoozeAt.timeIntervalSinceNow, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated {
-                self?.snoozingAlarmID = nil
-                self?.snoozeUntil = nil
-                self?.fire(alarm)
-            }
-        }
+        persist()
     }
 
     func cancelSnooze() {
         snoozeTimer?.invalidate()
         snoozeTimer = nil
-        snoozingAlarmID = nil
-        snoozeUntil = nil
+        snoozeState = nil
+        persist()
+    }
+
+    private func armSnoozeTimer(_ snooze: SnoozeState) {
+        snoozeTimer?.invalidate()
+        let delay = max(0.1, snooze.fireAt.timeIntervalSinceNow)
+        snoozeTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let snoozedID = self.snoozeState?.alarmID
+                self.snoozeState = nil
+                self.persist()
+                if let snoozedID, let alarm = self.alarms.first(where: { $0.id == snoozedID }) {
+                    self.fire(alarm)
+                }
+            }
+        }
     }
 
     private func fire(_ alarm: Alarm) {
         firing = alarm
-        snoozingAlarmID = nil
-        snoozeUntil = nil
+        snoozeState = nil
+        snoozeTimer?.invalidate()
+        snoozeTimer = nil
 
         // 1. 화면/시스템 절전 방지 활성화
         powerManager.acquireSleepAssertion(reason: "Matuta Alarm Firing")
@@ -156,7 +188,8 @@ final class AlarmListModel {
         let primary = SoundSourceFactory.makeSource(for: alarm.source, tonePlayer: tonePlayer)
         let backup = SoundSourceFactory.backupSource(tonePlayer: tonePlayer)
 
-        Task { @MainActor in
+        fireTask?.cancel()
+        fireTask = Task { @MainActor in
             await playbackChain.start(
                 primary: primary,
                 backup: backup,
@@ -175,14 +208,14 @@ final class AlarmListModel {
     }
 
     private func persist() {
-        try? store.save(alarms)
+        try? store.savePayload(AlarmStorePayload(alarms: alarms, snooze: snoozeState))
         reschedule()
     }
 
     private func reschedule() {
-        scheduler?.update(alarms: alarms)
+        scheduler?.update(alarms: alarms, snooze: snoozeState)
 
-        // 다음 알람 2분 전 Mac 절전 깨우기 자동 예약
+        // 단일 통합 nextFire 시각 기준 2분 전 절전 깨우기 예약 (스누즈 포함)
         if let next = scheduler?.nextFire?.date {
             powerManager.scheduleWake(at: next)
         } else {
