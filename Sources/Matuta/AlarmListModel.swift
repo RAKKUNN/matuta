@@ -14,7 +14,8 @@ final class AlarmListModel {
 
     private let store: AlarmStore
     private var scheduler: Scheduler?
-    private let player = TonePlayer()
+    private let tonePlayer = TonePlayer()
+    public let playbackChain = PlaybackChain()
     private let overlay = AlarmOverlayController()
 
     init(store: AlarmStore = AlarmStore(fileURL: AlarmStore.defaultFileURL)) {
@@ -66,7 +67,7 @@ final class AlarmListModel {
 
     /// 스페이스바로 알람을 완전히 껐을 때.
     func dismissFiring() {
-        player.stop()
+        playbackChain.stop()
         overlay.hide()
         if let alarm = firing, alarm.weekdays.isEmpty {
             // 1회성 알람은 울리고 나면 꺼둔다.
@@ -81,7 +82,7 @@ final class AlarmListModel {
     /// 스누즈. 마우스 클릭으로만 도달한다.
     func snoozeFiring() {
         guard let alarm = firing, let minutes = alarm.snoozeMinutes else { return }
-        player.stop()
+        playbackChain.stop()
         overlay.hide()
         firing = nil
 
@@ -95,11 +96,21 @@ final class AlarmListModel {
 
     private func fire(_ alarm: Alarm) {
         firing = alarm
-        // 1단계에서 재생되는 소스는 .builtIn 하나뿐이다.
-        // 2단계에서 PlaybackChain이 이 자리를 대체한다.
-        player.start(pattern: .radar, volume: alarm.volume, fadeIn: alarm.fadeIn)
+        let primary = SoundSourceFactory.makeSource(for: alarm.source, tonePlayer: tonePlayer)
+        let backup = SoundSourceFactory.backupSource(tonePlayer: tonePlayer)
+
+        Task { @MainActor in
+            await playbackChain.start(
+                primary: primary,
+                backup: backup,
+                volume: alarm.volume,
+                fadeIn: alarm.fadeIn
+            )
+        }
+
         overlay.show(
             alarm: alarm,
+            playbackChain: playbackChain,
             onDismiss: { [weak self] in self?.dismissFiring() },
             onSnooze: { [weak self] in self?.snoozeFiring() }
         )

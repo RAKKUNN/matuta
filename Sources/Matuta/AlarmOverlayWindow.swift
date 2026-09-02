@@ -32,6 +32,7 @@ final class AlarmOverlayController {
 
     func show(
         alarm: Alarm,
+        playbackChain: PlaybackChain,
         onDismiss: @escaping () -> Void,
         onSnooze: @escaping () -> Void
     ) {
@@ -53,7 +54,11 @@ final class AlarmOverlayController {
             window.backgroundColor = .black
             window.hasShadow = false
             window.contentView = NSHostingView(
-                rootView: AlarmOverlayView(alarm: alarm, onSnooze: onSnooze)
+                rootView: AlarmOverlayView(
+                    alarm: alarm,
+                    activeSourceName: playbackChain.activeSourceName,
+                    onSnooze: onSnooze
+                )
             )
             window.makeKeyAndOrderFront(nil)
             windows.append(window)

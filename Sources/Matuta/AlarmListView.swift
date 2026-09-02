@@ -81,9 +81,20 @@ private struct AlarmRow: View {
                 .filter { alarm.weekdays.contains($0) }
                 .map(\.shortName)
                 .joined(separator: "·")
-        if let label = alarm.label, !label.isEmpty {
-            return "\(days) · \(label)"
+
+        let sourceName: String
+        switch alarm.source {
+        case .builtIn(let name): sourceName = "🔔 \(name)"
+        case .localFile: sourceName = "🎵 파일"
+        case .streamURL: sourceName = "📻 라디오"
+        case .appleMusic: sourceName = "🍎 Music"
+        case .spotify: sourceName = "🟢 Spotify"
+        case .web: sourceName = "🌐 웹"
         }
-        return days
+
+        if let label = alarm.label, !label.isEmpty {
+            return "\(days) · \(label) · \(sourceName)"
+        }
+        return "\(days) · \(sourceName)"
     }
 }

@@ -3,6 +3,7 @@ import MatutaCore
 
 struct AlarmOverlayView: View {
     let alarm: Alarm
+    let activeSourceName: String
     let onSnooze: () -> Void
 
     @State private var now = Date()
@@ -29,9 +30,9 @@ struct AlarmOverlayView: View {
                     .foregroundStyle(.white.opacity(0.75))
                     .padding(.top, 10)
 
-                Text("🔔 Radar")
+                Text(activeSourceName.isEmpty ? sourceDefaultLabel : activeSourceName)
                     .font(.callout)
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.white.opacity(0.6))
                     .padding(.top, 6)
 
                 Text("space")
@@ -51,9 +52,9 @@ struct AlarmOverlayView: View {
                     .foregroundStyle(.white.opacity(0.4))
                     .padding(.top, 9)
 
-                if alarm.snoozeMinutes != nil {
+                if let snooze = alarm.snoozeMinutes {
                     // 마우스로만 누를 수 있다. 키보드 포커스를 주지 않는다.
-                    Button("스누즈 \(alarm.snoozeMinutes!)분") {
+                    Button("스누즈 \(snooze)분") {
                         onSnooze()
                     }
                     .buttonStyle(.plain)
@@ -70,5 +71,16 @@ struct AlarmOverlayView: View {
             }
         }
         .onReceive(tick) { now = $0 }
+    }
+
+    private var sourceDefaultLabel: String {
+        switch alarm.source {
+        case .builtIn(let name): "🔔 \(name)"
+        case .localFile: "🎵 로컬 파일"
+        case .streamURL(let url): "📻 \(url.host ?? "스트림")"
+        case .appleMusic: "🍎 Apple Music"
+        case .spotify: "🟢 Spotify"
+        case .web(let url): "🌐 \(url.host ?? "웹")"
+        }
     }
 }
