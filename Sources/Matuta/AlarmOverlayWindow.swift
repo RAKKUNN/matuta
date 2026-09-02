@@ -57,6 +57,7 @@ final class AlarmOverlayController {
                 rootView: AlarmOverlayView(
                     alarm: alarm,
                     activeSourceName: playbackChain.activeSourceName,
+                    onDismiss: onDismiss,
                     onSnooze: onSnooze
                 )
             )

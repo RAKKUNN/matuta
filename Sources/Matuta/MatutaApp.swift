@@ -27,6 +27,14 @@ struct MatutaApp: App {
         .windowResizability(.contentSize)
 
         MenuBarExtra(menuBarTitle) {
+            if model.firing != nil {
+                Button("🛑 알람 끄기") {
+                    model.dismissFiring()
+                }
+                .keyboardShortcut(.space, modifiers: [])
+                Divider()
+            }
+
             Button("알람 창 열기") {
                 openWindow(id: "alarms")
                 NSApp.activate(ignoringOtherApps: true)
@@ -43,8 +51,11 @@ struct MatutaApp: App {
         }
     }
 
-    /// 메뉴바에는 다음 알람 시각만 조용히 띄운다.
+    /// 메뉴바 타이틀: 알람 울림 중에는 즉각 강조
     private var menuBarTitle: String {
+        if model.firing != nil {
+            return "🚨 알람 울리는 중"
+        }
         guard let next = model.nextFireDate else { return "⏰" }
         return "⏰ " + next.formatted(date: .omitted, time: .shortened)
     }

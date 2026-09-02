@@ -7,9 +7,9 @@ enum SourceTab: String, CaseIterable, Identifiable {
     case builtIn = "벨소리"
     case file = "파일"
     case spotify = "Spotify"
+    case web = "유튜브/웹"
     case radio = "라디오"
     case appleMusic = "Music"
-    case web = "웹"
 
     var id: String { rawValue }
 
@@ -18,9 +18,9 @@ enum SourceTab: String, CaseIterable, Identifiable {
         case .builtIn: return "bell.fill"
         case .file: return "music.note"
         case .spotify: return "waveform.circle.fill"
+        case .web: return "play.rectangle.fill"
         case .radio: return "antenna.radiowaves.left.and.right"
         case .appleMusic: return "applelogo"
-        case .web: return "globe"
         }
     }
 }
@@ -31,12 +31,15 @@ struct AlarmEditView: View {
     @State private var builtInName: String = "Radar"
     @State private var localFileName: String = ""
     @State private var spotifyInput: String = ""
+    @State private var webInput: String = "https://www.youtube.com/watch?v=jfKfPfyJRdk" // Lofi Girl
     @State private var radioInput: String = "https://stream.radioparadise.com/aac-320"
     @State private var appleMusicInput: String = ""
-    @State private var webInput: String = "https://www.youtube.com"
     @State private var isDropTargeted: Bool = false
     @State private var isPreviewing: Bool = false
     @State private var previewPlayer = TonePlayer()
+
+    @State private var isPM: Bool = false
+    @State private var hour12: Int = 7
 
     private let onSave: (Alarm) -> Void
     private let onCancel: () -> Void
@@ -52,125 +55,264 @@ struct AlarmEditView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            timeField
-            weekdayPicker
-            soundSection
-            volumeSection
-
+        VStack(spacing: 0) {
+            // 헤더
             HStack {
-                Button("취소", role: .cancel) {
+                Button("취소") {
                     stopPreview()
                     onCancel()
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
                 Spacer()
+
+                Text("알람 설정")
+                    .font(.system(size: 15, weight: .bold))
+
+                Spacer()
+
                 Button("저장") {
                     stopPreview()
                     syncAlarmSource()
+                    syncTime24()
                     onSave(alarm)
                 }
+                .buttonStyle(.plain)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 5)
+                .background(Color.accentColor)
+                .clipShape(Capsule())
                 .keyboardShortcut(.defaultAction)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+
+            Divider().opacity(0.4)
+
+            ScrollView {
+                VStack(spacing: 20) {
+                    // 1. 대형 시계 타임 피커
+                    timePickerSection
+
+                    // 2. 반복 요일 설정
+                    weekdaySection
+
+                    // 3. 라벨 입력
+                    labelSection
+
+                    // 4. 사운드 소스 선택
+                    soundSourceSection
+
+                    // 5. 볼륨 및 옵션
+                    optionsSection
+                }
+                .padding(20)
+            }
         }
-        .padding(20)
-        .frame(width: 420)
+        .frame(width: 440, height: 600)
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
-            initializeFromAlarm()
+            initializeState()
         }
         .onDisappear {
             stopPreview()
         }
     }
 
-    // 드럼 휠 대신 키보드로 친다. Mac에는 키보드가 있다.
-    private var timeField: some View {
-        VStack(spacing: 4) {
-            HStack(spacing: 2) {
-                TextField("", value: $alarm.hour, format: .number)
-                    .frame(width: 62)
-                Text(":")
-                TextField("", value: $alarm.minute, format: .number)
-                    .frame(width: 62)
-            }
-            .textFieldStyle(.plain)
-            .font(.system(size: 42, weight: .thin))
-            .monospacedDigit()
-            .multilineTextAlignment(.center)
+    // MARK: - 1. 대형 시계 타임 피커
 
-            Text("시각을 입력하세요 (24시간 형식)")
-                .font(.caption2)
+    private var timePickerSection: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                // 시간 입력 박스
+                HStack(spacing: 2) {
+                    TextField("", value: $hour12, format: .number)
+                        .frame(width: 60)
+                    Text(":")
+                        .font(.system(size: 44, weight: .ultraLight, design: .rounded))
+                        .foregroundStyle(.secondary)
+                    TextField("", value: $alarm.minute, format: .number)
+                        .frame(width: 60)
+                }
+                .textFieldStyle(.plain)
+                .font(.system(size: 46, weight: .light, design: .rounded))
+                .monospacedDigit()
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(nsColor: .controlBackgroundColor))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.08)))
+                )
+
+                // AM / PM 세그먼트 스위치
+                VStack(spacing: 4) {
+                    Button("AM") { isPM = false; syncTime24() }
+                        .font(.system(size: 12, weight: !isPM ? .bold : .medium))
+                        .frame(width: 44, height: 26)
+                        .background(!isPM ? Color.accentColor : Color.primary.opacity(0.06))
+                        .foregroundStyle(!isPM ? Color.white : Color.secondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .buttonStyle(.plain)
+
+                    Button("PM") { isPM = true; syncTime24() }
+                        .font(.system(size: 12, weight: isPM ? .bold : .medium))
+                        .frame(width: 44, height: 26)
+                        .background(isPM ? Color.accentColor : Color.primary.opacity(0.06))
+                        .foregroundStyle(isPM ? Color.white : Color.secondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .buttonStyle(.plain)
+                }
+            }
+
+            Text("시간을 클릭하여 키보드로 직접 입력할 수 있습니다")
+                .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
         }
-        .onChange(of: alarm.hour) { _, new in
-            alarm.hour = min(23, max(0, new))
+        .padding(.vertical, 4)
+        .onChange(of: hour12) { _, new in
+            hour12 = min(12, max(1, new))
+            syncTime24()
         }
         .onChange(of: alarm.minute) { _, new in
             alarm.minute = min(59, max(0, new))
         }
     }
 
-    private var weekdayPicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("반복").font(.caption).foregroundStyle(.secondary)
-            HStack(spacing: 4) {
+    // MARK: - 2. 반복 요일 설정
+
+    private var weekdaySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("반복")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+
+                // 퀵 프리셋
+                HStack(spacing: 4) {
+                    quickDayPreset("주중", days: [.monday, .tuesday, .wednesday, .thursday, .friday])
+                    quickDayPreset("주말", days: [.saturday, .sunday])
+                    quickDayPreset("매일", days: Set(Weekday.allCases))
+                    quickDayPreset("안 함", days: [])
+                }
+            }
+
+            HStack(spacing: 6) {
                 ForEach(Weekday.displayOrder, id: \.self) { day in
-                    Button(day.shortName) {
-                        if alarm.weekdays.contains(day) {
+                    let isSelected = alarm.weekdays.contains(day)
+                    Button(action: {
+                        if isSelected {
                             alarm.weekdays.remove(day)
                         } else {
                             alarm.weekdays.insert(day)
                         }
+                    }) {
+                        Text(day.shortName)
+                            .font(.system(size: 12, weight: isSelected ? .bold : .medium))
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                            .background(isSelected ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
+                            .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.7))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .strokeBorder(isSelected ? Color.clear : Color.primary.opacity(0.06))
+                            )
                     }
-                    .buttonStyle(.borderless)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 5)
-                    .background(alarm.weekdays.contains(day) ? Color.accentColor : Color.secondary.opacity(0.15))
-                    .foregroundStyle(alarm.weekdays.contains(day) ? Color.white : Color.secondary)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
-    // 소스 선택 인터페이스
-    private var soundSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("무엇으로 깨울까요").font(.caption).foregroundStyle(.secondary)
+    private func quickDayPreset(_ title: String, days: Set<Weekday>) -> some View {
+        Button(title) {
+            alarm.weekdays = days
+        }
+        .buttonStyle(.plain)
+        .font(.system(size: 10, weight: .medium))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.primary.opacity(0.06))
+        .clipShape(Capsule())
+        .foregroundStyle(.secondary)
+    }
 
-            // 소스 탭 선택기
-            Picker("", selection: $selectedTab) {
+    // MARK: - 3. 알람 라벨
+
+    private var labelSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("라벨")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            TextField("알람 이름 (예: 기상, 출근, 회의)", text: Binding(
+                get: { alarm.label ?? "" },
+                set: { alarm.label = $0.isEmpty ? nil : $0 }
+            ))
+            .textFieldStyle(.plain)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.primary.opacity(0.08)))
+            )
+        }
+    }
+
+    // MARK: - 4. 사운드 소스 선택
+
+    private var soundSourceSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("사운드")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            // 세그먼트 탭
+            HStack(spacing: 2) {
                 ForEach(SourceTab.allCases) { tab in
-                    Label(tab.rawValue, systemImage: tab.icon).tag(tab)
+                    let isSelected = selectedTab == tab
+                    Button(action: {
+                        selectedTab = tab
+                        stopPreview()
+                        syncAlarmSource()
+                    }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 10))
+                            Text(tab.rawValue)
+                                .font(.system(size: 11, weight: isSelected ? .bold : .regular))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(isSelected ? Color.accentColor : Color.clear)
+                        .foregroundStyle(isSelected ? Color.white : Color.secondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            .pickerStyle(.segmented)
-            .onChange(of: selectedTab) { _, _ in
-                stopPreview()
-                syncAlarmSource()
-            }
+            .padding(2)
+            .background(Color.primary.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-            // 탭별 세부 설정 영역
-            tabContent
-                .padding(10)
-                .background(Color.secondary.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isDropTargeted ? Color.accentColor : Color.secondary.opacity(0.15), lineWidth: 1.5)
-                )
-                .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
-                    handleFileDrop(providers)
-                }
+            // 탭별 콘텐츠
+            tabContentCard
         }
     }
 
-    @ViewBuilder
-    private var tabContent: some View {
-        switch selectedTab {
-        case .builtIn:
-            VStack(alignment: .leading, spacing: 8) {
+    private var tabContentCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            switch selectedTab {
+            case .builtIn:
                 HStack {
-                    Picker("벨소리 선택", selection: $builtInName) {
+                    Picker("벨소리", selection: $builtInName) {
                         ForEach(TonePattern.allBuiltInNames, id: \.self) { name in
                             Text(name).tag(name)
                         }
@@ -180,133 +322,230 @@ struct AlarmEditView: View {
                         syncAlarmSource()
                     }
 
-                    Button(isPreviewing ? "⏹️ 정지" : "▶️ 미리듣기") {
-                        toggleBuiltInPreview()
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-                Text("순수 합성 비프음으로 파일 손상이나 네트워크 실패 없이 항상 울립니다.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-        case .file:
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(localFileName.isEmpty ? "선택된 파일 없음" : localFileName)
-                        .font(.callout)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
                     Spacer()
-                    Button("파일 찾기...") {
-                        selectLocalFile()
+
+                    Button(action: toggleBuiltInPreview) {
+                        HStack(spacing: 4) {
+                            Image(systemName: isPreviewing ? "stop.fill" : "play.fill")
+                                .font(.system(size: 10))
+                            Text(isPreviewing ? "정지" : "미리듣기")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.primary.opacity(0.08))
+                        .clipShape(Capsule())
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                }
-                Text("💡 MP3, M4A, WAV 등 원하는 음악 파일을 창으로 드래그 앤 드롭해도 됩니다.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-        case .spotify:
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("Spotify 트랙 또는 플레이리스트 URI / 링크", text: $spotifyInput)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: spotifyInput) { _, _ in syncAlarmSource() }
-
-                HStack(spacing: 4) {
-                    Text("프리셋:").font(.caption2).foregroundStyle(.tertiary)
-                    presetChip(title: "Top Hits", text: "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M")
-                    presetChip(title: "모닝 어쿠스틱", text: "spotify:playlist:37i9dQZF1DX2MyUCdfq5Dg")
-                    presetChip(title: "집중 피아노", text: "spotify:playlist:37i9dQZF1DX4sWSpwq3LiO")
+                    .buttonStyle(.plain)
                 }
 
-                Text("🛡️ Spotify 실행과 동시에 Radar 백업음이 함께 재생되어 무음 실패를 방지합니다.")
-                    .font(.caption2)
+                Text("✨ 100% 합성 파형으로 파일 손상이나 인터넷 끊김 없이 항상 울립니다.")
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-            }
 
-        case .radio:
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("라디오 스트림 URL", text: $radioInput)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: radioInput) { _, _ in syncAlarmSource() }
+            case .file:
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "music.note")
+                            .foregroundStyle(.cyan)
+                        Text(localFileName.isEmpty ? "선택된 파일 없음" : localFileName)
+                            .font(.system(size: 13, weight: .medium))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button("파일 찾기...") {
+                            selectLocalFile()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                    }
 
-                HStack(spacing: 4) {
-                    Text("추천:").font(.caption2).foregroundStyle(.tertiary)
-                    radioPresetChip(title: "Paradise", url: "https://stream.radioparadise.com/aac-320")
-                    radioPresetChip(title: "Mellow", url: "https://stream.radioparadise.com/mellow-aac-320")
-                    radioPresetChip(title: "Classic", url: "https://icecast.vrt.be/klara-high.mp3")
+                    Text("💡 MP3, M4A, WAV 등 원하는 음악 파일을 창으로 직접 드래그 앤 드롭해도 됩니다.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+                    handleFileDrop(providers)
                 }
 
-                Text("📡 스트림 연결 실패 시 즉시 Radar 백업음으로 자동 폴백됩니다.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+            case .spotify:
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Spotify 링크 또는 URI", text: $spotifyInput)
+                        .textFieldStyle(.plain)
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.08)))
+                        .onChange(of: spotifyInput) { _, _ in syncAlarmSource() }
 
-        case .appleMusic:
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("Apple Music 앨범/트랙 URL", text: $appleMusicInput)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: appleMusicInput) { _, _ in syncAlarmSource() }
+                    HStack(spacing: 4) {
+                        Text("추천:").font(.system(size: 10)).foregroundStyle(.tertiary)
+                        presetChip("Top 50", text: "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M")
+                        presetChip("어쿠스틱", text: "spotify:playlist:37i9dQZF1DX2MyUCdfq5Dg")
+                        presetChip("Lofi", text: "spotify:playlist:37i9dQZF1DXdLEN7aqioXM")
+                    }
 
-                Text("🍎 Music 앱과 연동되어 정해진 시간에 재생을 시작합니다.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+                    Text("🛡️ Spotify 실행과 동시에 Radar 백업음이 함께 재생되어 기상을 보장합니다.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
 
-        case .web:
-            VStack(alignment: .leading, spacing: 6) {
-                TextField("웹사이트 또는 YouTube URL", text: $webInput)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: webInput) { _, _ in syncAlarmSource() }
+            case .web:
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("유튜브 영상 / 라이브 링크 또는 웹 URL", text: $webInput)
+                        .textFieldStyle(.plain)
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.08)))
+                        .onChange(of: webInput) { _, _ in syncAlarmSource() }
 
-                Text("🌐 기본 웹 브라우저로 열리며 Radar 백업음이 함께 울립니다.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Text("추천:").font(.system(size: 10)).foregroundStyle(.tertiary)
+                        webPresetChip("Lofi Girl", url: "https://www.youtube.com/watch?v=jfKfPfyJRdk")
+                        webPresetChip("카페 재즈", url: "https://www.youtube.com/watch?v=DXUAyRRkI6k")
+                        webPresetChip("빗소리", url: "https://www.youtube.com/watch?v=mPZkdNFkNps")
+                    }
+
+                    Text("🌐 알람 시각에 브라우저가 열리며 화면의 [알람 끄기] 버튼으로 즉시 해제할 수 있습니다.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+
+            case .radio:
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("라디오 스트림 URL", text: $radioInput)
+                        .textFieldStyle(.plain)
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.08)))
+                        .onChange(of: radioInput) { _, _ in syncAlarmSource() }
+
+                    HStack(spacing: 4) {
+                        Text("추천:").font(.system(size: 10)).foregroundStyle(.tertiary)
+                        radioPresetChip("Paradise", url: "https://stream.radioparadise.com/aac-320")
+                        radioPresetChip("Mellow", url: "https://stream.radioparadise.com/mellow-aac-320")
+                        radioPresetChip("Classic", url: "https://icecast.vrt.be/klara-high.mp3")
+                    }
+
+                    Text("📡 스트림 연결 실패 시 즉시 Radar 백업음으로 자동 대체됩니다.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+
+            case .appleMusic:
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Apple Music 앨범/트랙 URL", text: $appleMusicInput)
+                        .textFieldStyle(.plain)
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.08)))
+                        .onChange(of: appleMusicInput) { _, _ in syncAlarmSource() }
+
+                    Text("🍎 Music 앱과 연동되어 정해진 시간에 재생을 시작합니다.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(isDropTargeted ? Color.accentColor : Color.primary.opacity(0.06), lineWidth: 1)
+                )
+        )
     }
 
-    private var volumeSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("볼륨").font(.caption).foregroundStyle(.secondary)
-            Slider(value: $alarm.volume, in: 0...1)
-            Toggle("서서히 커지기 (페이드인)", isOn: $alarm.fadeIn)
-            Toggle("스누즈 9분", isOn: Binding(
+    // MARK: - 5. 볼륨 및 옵션
+
+    private var optionsSection: some View {
+        VStack(spacing: 12) {
+            // 볼륨 슬라이더
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("볼륨")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(Int(alarm.volume * 100))%")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: "speaker.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Slider(value: $alarm.volume, in: 0...1)
+                    Image(systemName: "speaker.wave.3.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider().opacity(0.3)
+
+            // 토글 옵션들
+            Toggle("서서히 커지기 (점진적 볼륨 페이드인)", isOn: $alarm.fadeIn)
+                .font(.system(size: 12, weight: .medium))
+
+            Toggle("스누즈 9분 허용", isOn: Binding(
                 get: { alarm.snoozeMinutes != nil },
                 set: { alarm.snoozeMinutes = $0 ? 9 : nil }
             ))
+            .font(.system(size: 12, weight: .medium))
         }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.4))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.primary.opacity(0.05)))
+        )
     }
 
     // MARK: - Helpers & Synchronization
 
-    private func presetChip(title: String, text: String) -> some View {
+    private func presetChip(_ title: String, text: String) -> some View {
         Button(title) {
             spotifyInput = text
             syncAlarmSource()
         }
-        .buttonStyle(.borderless)
-        .font(.caption2)
+        .buttonStyle(.plain)
+        .font(.system(size: 10, weight: .medium))
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .background(Color.secondary.opacity(0.15))
+        .background(Color.primary.opacity(0.08))
         .clipShape(Capsule())
     }
 
-    private func radioPresetChip(title: String, url: String) -> some View {
+    private func webPresetChip(_ title: String, url: String) -> some View {
+        Button(title) {
+            webInput = url
+            syncAlarmSource()
+        }
+        .buttonStyle(.plain)
+        .font(.system(size: 10, weight: .medium))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.primary.opacity(0.08))
+        .clipShape(Capsule())
+    }
+
+    private func radioPresetChip(_ title: String, url: String) -> some View {
         Button(title) {
             radioInput = url
             syncAlarmSource()
         }
-        .buttonStyle(.borderless)
-        .font(.caption2)
+        .buttonStyle(.plain)
+        .font(.system(size: 10, weight: .medium))
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
-        .background(Color.secondary.opacity(0.15))
+        .background(Color.primary.opacity(0.08))
         .clipShape(Capsule())
     }
 
@@ -327,7 +566,10 @@ struct AlarmEditView: View {
         }
     }
 
-    private func initializeFromAlarm() {
+    private func initializeState() {
+        isPM = alarm.hour >= 12
+        hour12 = alarm.hour == 0 ? 12 : (alarm.hour > 12 ? alarm.hour - 12 : alarm.hour)
+
         switch alarm.source {
         case .builtIn(let name):
             selectedTab = .builtIn
@@ -337,20 +579,28 @@ struct AlarmEditView: View {
             if let url = LocalFileSource.resolve(bookmark: bookmark) {
                 localFileName = url.lastPathComponent
             } else {
-                localFileName = "로컬 파일"
+                localFileName = "로컬 음악 파일"
             }
-        case .streamURL(let url):
-            selectedTab = .radio
-            radioInput = url.absoluteString
-        case .appleMusic(let id):
-            selectedTab = .appleMusic
-            appleMusicInput = id
         case .spotify(let uri):
             selectedTab = .spotify
             spotifyInput = uri
         case .web(let url):
             selectedTab = .web
             webInput = url.absoluteString
+        case .streamURL(let url):
+            selectedTab = .radio
+            radioInput = url.absoluteString
+        case .appleMusic(let id):
+            selectedTab = .appleMusic
+            appleMusicInput = id
+        }
+    }
+
+    private func syncTime24() {
+        if isPM {
+            alarm.hour = hour12 == 12 ? 12 : hour12 + 12
+        } else {
+            alarm.hour = hour12 == 12 ? 0 : hour12
         }
     }
 
@@ -359,7 +609,6 @@ struct AlarmEditView: View {
         case .builtIn:
             alarm.source = .builtIn(name: builtInName)
         case .file:
-            // 로컬 파일 유지 (이미 설정된 bookmark 또는 기본값)
             break
         case .spotify:
             let parsed = OmniboxParser.parse(text: spotifyInput)
@@ -368,16 +617,16 @@ struct AlarmEditView: View {
             } else if !spotifyInput.isEmpty {
                 alarm.source = .spotify(uri: spotifyInput)
             }
+        case .web:
+            if let url = URL(string: webInput) {
+                alarm.source = .web(url)
+            }
         case .radio:
             if let url = URL(string: radioInput) {
                 alarm.source = .streamURL(url)
             }
         case .appleMusic:
             alarm.source = .appleMusic(id: appleMusicInput.isEmpty ? "default" : appleMusicInput)
-        case .web:
-            if let url = URL(string: webInput) {
-                alarm.source = .web(url)
-            }
         }
     }
 
