@@ -1,10 +1,10 @@
-# Daybreak 1단계 (뼈대) 구현 계획
+# Matuta 1단계 (뼈대) 구현 계획
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 정해둔 시각에 실제로 소리를 내고 스페이스바로 꺼지는, 매일 쓸 수 있는 macOS 알람앱을 만든다.
 
-**Architecture:** 순수 로직(모델·시각 계산·영속화·스케줄링·톤 생성)을 `DaybreakCore` 라이브러리에 몰아넣고 `swift test`로 전부 검증한다. SwiftUI 앱(`Daybreak`)은 그 위에 얹는 얇은 껍데기이며 수동으로 확인한다. Xcode 프로젝트 파일 없이 순수 SwiftPM으로 구성하고, `.app` 번들은 셸 스크립트로 조립한다 — 전 과정이 터미널에서 재현 가능해야 하기 때문이다.
+**Architecture:** 순수 로직(모델·시각 계산·영속화·스케줄링·톤 생성)을 `MatutaCore` 라이브러리에 몰아넣고 `swift test`로 전부 검증한다. SwiftUI 앱(`Matuta`)은 그 위에 얹는 얇은 껍데기이며 수동으로 확인한다. Xcode 프로젝트 파일 없이 순수 SwiftPM으로 구성하고, `.app` 번들은 셸 스크립트로 조립한다 — 전 과정이 터미널에서 재현 가능해야 하기 때문이다.
 
 **Tech Stack:** Swift 6.3, SwiftPM (swift-tools-version 6.0), SwiftUI, AppKit (오버레이 창), AVFAudio (톤 생성), swift-testing (`import Testing`)
 
@@ -17,7 +17,7 @@
   - 알람별 동작 설정은 볼륨·페이드인·스누즈 셋뿐이다
   - 첫 실행 시 빈 화면을 보여주지 않는다
 - **스페이스바 = 완전히 끄기. 스누즈는 마우스 클릭으로만.** 오버레이에서 다른 키는 전부 무시한다
-- 알람 저장 위치: `~/Library/Application Support/Daybreak/alarms.json`
+- 알람 저장 위치: `~/Library/Application Support/Matuta/alarms.json`
 - 이 계획의 범위는 설계 문서 §11의 **0단계 + 1단계**뿐이다. 2단계(소스 6종·옴니박스)와 3단계(AudioGuard·Preflight·나이트스탠드)는 별도 계획으로 쓴다. `SoundSourceRef`는 6종 전부 정의하되 **1단계에서 실제로 재생되는 것은 `.builtIn`뿐이다**
 - 모든 사용자 노출 문자열은 한국어
 
@@ -26,23 +26,23 @@
 | 파일 | 책임 |
 |---|---|
 | `Package.swift` | 패키지 정의 |
-| `Sources/DaybreakCore/Weekday.swift` | 요일. `Calendar`의 weekday 값(일=1)과 일치 |
-| `Sources/DaybreakCore/SoundSourceRef.swift` | 사운드 소스 식별자 (데이터만) |
-| `Sources/DaybreakCore/Alarm.swift` | 알람 모델 |
-| `Sources/DaybreakCore/WallClock.swift` | 현재 시각 주입용 프로토콜 |
-| `Sources/DaybreakCore/NextOccurrence.swift` | 다음 발생 시각 계산 (순수 함수) |
-| `Sources/DaybreakCore/AlarmStore.swift` | JSON 영속화 |
-| `Sources/DaybreakCore/AlarmTimer.swift` | 타이머 추상화 |
-| `Sources/DaybreakCore/Scheduler.swift` | 다음 알람 선택 + 발화 |
-| `Sources/DaybreakCore/TonePattern.swift` | 톤 파형 생성 (순수 함수) |
-| `Sources/Daybreak/DaybreakApp.swift` | 앱 진입점, 씬 구성 |
-| `Sources/Daybreak/AlarmListModel.swift` | 목록 창의 상태 |
-| `Sources/Daybreak/AlarmListView.swift` | 알람 목록 창 |
-| `Sources/Daybreak/AlarmEditView.swift` | 알람 편집 시트 |
-| `Sources/Daybreak/TonePlayer.swift` | `TonePattern` → 실제 소리 (AVFAudio) |
-| `Sources/Daybreak/AlarmOverlayWindow.swift` | 전체화면 창 + 키 처리 |
-| `Sources/Daybreak/AlarmOverlayView.swift` | 오버레이 내용 |
-| `Tests/DaybreakCoreTests/*` | 위 순수 로직 테스트 |
+| `Sources/MatutaCore/Weekday.swift` | 요일. `Calendar`의 weekday 값(일=1)과 일치 |
+| `Sources/MatutaCore/SoundSourceRef.swift` | 사운드 소스 식별자 (데이터만) |
+| `Sources/MatutaCore/Alarm.swift` | 알람 모델 |
+| `Sources/MatutaCore/WallClock.swift` | 현재 시각 주입용 프로토콜 |
+| `Sources/MatutaCore/NextOccurrence.swift` | 다음 발생 시각 계산 (순수 함수) |
+| `Sources/MatutaCore/AlarmStore.swift` | JSON 영속화 |
+| `Sources/MatutaCore/AlarmTimer.swift` | 타이머 추상화 |
+| `Sources/MatutaCore/Scheduler.swift` | 다음 알람 선택 + 발화 |
+| `Sources/MatutaCore/TonePattern.swift` | 톤 파형 생성 (순수 함수) |
+| `Sources/Matuta/MatutaApp.swift` | 앱 진입점, 씬 구성 |
+| `Sources/Matuta/AlarmListModel.swift` | 목록 창의 상태 |
+| `Sources/Matuta/AlarmListView.swift` | 알람 목록 창 |
+| `Sources/Matuta/AlarmEditView.swift` | 알람 편집 시트 |
+| `Sources/Matuta/TonePlayer.swift` | `TonePattern` → 실제 소리 (AVFAudio) |
+| `Sources/Matuta/AlarmOverlayWindow.swift` | 전체화면 창 + 키 처리 |
+| `Sources/Matuta/AlarmOverlayView.swift` | 오버레이 내용 |
+| `Tests/MatutaCoreTests/*` | 위 순수 로직 테스트 |
 | `Scripts/bundle.sh` | `.app` 조립 |
 | `Resources/Info.plist` | 번들 메타데이터 |
 
@@ -73,7 +73,7 @@ let wakeAt = Date().addingTimeInterval(120)
 
 let result = IOPMSchedulePowerEvent(
     wakeAt as CFDate,
-    "com.daybreak.spike" as CFString,
+    "com.matuta.spike" as CFString,
     kIOPMAutoWakeOrPowerOn as CFString
 )
 
@@ -123,7 +123,7 @@ Expected: 목록이 비어 있다.
 - `pmset -g sched`에 등록됨: <예 / 아니오>
 
 ## 결론
-<권한 불필요 → 3단계에서 PowerDaybreak가 직접 호출한다.>
+<권한 불필요 → 3단계에서 PowerMatuta가 직접 호출한다.>
 <또는: 권한 필요 → 설계 문서 §9의 대안 (a) 헬퍼 설치 / (b) 절전 방지 대체 중 하나를 3단계 계획에서 선택한다. 어느 쪽을 권하는지와 이유를 여기 적는다.>
 ```
 
@@ -141,10 +141,10 @@ git commit -m "spike: 절전 깨우기 권한 요구사항 확인"
 
 **Files:**
 - Create: `Package.swift`
-- Create: `Sources/DaybreakCore/Weekday.swift`
-- Create: `Sources/DaybreakCore/SoundSourceRef.swift`
-- Create: `Sources/DaybreakCore/Alarm.swift`
-- Test: `Tests/DaybreakCoreTests/AlarmTests.swift`
+- Create: `Sources/MatutaCore/Weekday.swift`
+- Create: `Sources/MatutaCore/SoundSourceRef.swift`
+- Create: `Sources/MatutaCore/Alarm.swift`
+- Test: `Tests/MatutaCoreTests/AlarmTests.swift`
 
 **Interfaces:**
 - Consumes: 없음
@@ -163,44 +163,44 @@ git commit -m "spike: 절전 깨우기 권한 요구사항 확인"
 import PackageDescription
 
 let package = Package(
-    name: "Daybreak",
+    name: "Matuta",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "DaybreakCore", targets: ["DaybreakCore"]),
-        .executable(name: "Daybreak", targets: ["Daybreak"]),
+        .library(name: "MatutaCore", targets: ["MatutaCore"]),
+        .executable(name: "Matuta", targets: ["Matuta"]),
     ],
     targets: [
-        .target(name: "DaybreakCore"),
-        .executableTarget(name: "Daybreak", dependencies: ["DaybreakCore"]),
-        .testTarget(name: "DaybreakCoreTests", dependencies: ["DaybreakCore"]),
+        .target(name: "MatutaCore"),
+        .executableTarget(name: "Matuta", dependencies: ["MatutaCore"]),
+        .testTarget(name: "MatutaCoreTests", dependencies: ["MatutaCore"]),
     ]
 )
 ```
 
-`Sources/Daybreak/`가 아직 비어 있으면 빌드가 실패하므로, 자리를 채우는 파일을 하나 만든다.
+`Sources/Matuta/`가 아직 비어 있으면 빌드가 실패하므로, 자리를 채우는 파일을 하나 만든다.
 
-`Sources/Daybreak/DaybreakApp.swift`:
+`Sources/Matuta/MatutaApp.swift`:
 
 ```swift
 // Task 6에서 실제 앱으로 바뀐다.
 import Foundation
 
 @main
-struct DaybreakApp {
+struct MatutaApp {
     static func main() {
-        print("Daybreak")
+        print("Matuta")
     }
 }
 ```
 
 - [ ] **Step 2: 실패하는 테스트 작성**
 
-`Tests/DaybreakCoreTests/AlarmTests.swift`:
+`Tests/MatutaCoreTests/AlarmTests.swift`:
 
 ```swift
 import Testing
 import Foundation
-@testable import DaybreakCore
+@testable import MatutaCore
 
 @Test("기본값으로 알람을 만들면 평일 반복 없이 켜져 있다")
 func alarmDefaults() {
@@ -252,7 +252,7 @@ Expected: FAIL — `cannot find 'Alarm' in scope`, `cannot find 'Weekday' in sco
 
 - [ ] **Step 4: 최소 구현 작성**
 
-`Sources/DaybreakCore/Weekday.swift`:
+`Sources/MatutaCore/Weekday.swift`:
 
 ```swift
 import Foundation
@@ -287,7 +287,7 @@ public enum Weekday: Int, Codable, CaseIterable, Sendable, Hashable {
 }
 ```
 
-`Sources/DaybreakCore/SoundSourceRef.swift`:
+`Sources/MatutaCore/SoundSourceRef.swift`:
 
 ```swift
 import Foundation
@@ -307,7 +307,7 @@ public enum SoundSourceRef: Codable, Equatable, Sendable {
 }
 ```
 
-`Sources/DaybreakCore/Alarm.swift`:
+`Sources/MatutaCore/Alarm.swift`:
 
 ```swift
 import Foundation
@@ -373,9 +373,9 @@ git commit -m "feat: Alarm 모델과 패키지 뼈대"
 이 프로젝트에서 틀리기 가장 쉬운 로직이다. 알람이 안 울리는 원인 1순위가 여기다.
 
 **Files:**
-- Create: `Sources/DaybreakCore/WallClock.swift`
-- Create: `Sources/DaybreakCore/NextOccurrence.swift`
-- Test: `Tests/DaybreakCoreTests/NextOccurrenceTests.swift`
+- Create: `Sources/MatutaCore/WallClock.swift`
+- Create: `Sources/MatutaCore/NextOccurrence.swift`
+- Test: `Tests/MatutaCoreTests/NextOccurrenceTests.swift`
 
 **Interfaces:**
 - Consumes: `Alarm`, `Weekday` (Task 1)
@@ -386,12 +386,12 @@ git commit -m "feat: Alarm 모델과 패키지 뼈대"
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
-`Tests/DaybreakCoreTests/NextOccurrenceTests.swift`:
+`Tests/MatutaCoreTests/NextOccurrenceTests.swift`:
 
 ```swift
 import Testing
 import Foundation
-@testable import DaybreakCore
+@testable import MatutaCore
 
 /// 테스트는 절대 실제 시계나 실행 머신의 시간대에 의존하지 않는다.
 private let seoul = TimeZone(identifier: "Asia/Seoul")!
@@ -505,7 +505,7 @@ Expected: FAIL — `cannot find 'NextOccurrence' in scope`
 
 - [ ] **Step 3: 최소 구현 작성**
 
-`Sources/DaybreakCore/WallClock.swift`:
+`Sources/MatutaCore/WallClock.swift`:
 
 ```swift
 import Foundation
@@ -521,7 +521,7 @@ public struct SystemClock: WallClock {
 }
 ```
 
-`Sources/DaybreakCore/NextOccurrence.swift`:
+`Sources/MatutaCore/NextOccurrence.swift`:
 
 ```swift
 import Foundation
@@ -575,7 +575,7 @@ Expected: PASS — 7개 테스트 전부 통과
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add Sources/DaybreakCore/WallClock.swift Sources/DaybreakCore/NextOccurrence.swift Tests/
+git add Sources/MatutaCore/WallClock.swift Sources/MatutaCore/NextOccurrence.swift Tests/
 git commit -m "feat: 다음 발생 시각 계산"
 ```
 
@@ -584,8 +584,8 @@ git commit -m "feat: 다음 발생 시각 계산"
 ## Task 3: 알람 영속화
 
 **Files:**
-- Create: `Sources/DaybreakCore/AlarmStore.swift`
-- Test: `Tests/DaybreakCoreTests/AlarmStoreTests.swift`
+- Create: `Sources/MatutaCore/AlarmStore.swift`
+- Test: `Tests/MatutaCoreTests/AlarmStoreTests.swift`
 
 **Interfaces:**
 - Consumes: `Alarm` (Task 1)
@@ -597,16 +597,16 @@ git commit -m "feat: 다음 발생 시각 계산"
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
-`Tests/DaybreakCoreTests/AlarmStoreTests.swift`:
+`Tests/MatutaCoreTests/AlarmStoreTests.swift`:
 
 ```swift
 import Testing
 import Foundation
-@testable import DaybreakCore
+@testable import MatutaCore
 
 private func makeTempStore() -> (AlarmStore, URL) {
     let dir = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appendingPathComponent("daybreak-test-\(UUID().uuidString)")
+        .appendingPathComponent("matuta-test-\(UUID().uuidString)")
     let file = dir.appendingPathComponent("alarms.json")
     return (AlarmStore(fileURL: file), dir)
 }
@@ -681,7 +681,7 @@ Expected: FAIL — `cannot find 'AlarmStore' in scope`
 
 - [ ] **Step 3: 최소 구현 작성**
 
-`Sources/DaybreakCore/AlarmStore.swift`:
+`Sources/MatutaCore/AlarmStore.swift`:
 
 ```swift
 import Foundation
@@ -697,7 +697,7 @@ public struct AlarmStore: Sendable {
     public static var defaultFileURL: URL {
         FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Daybreak", isDirectory: true)
+            .appendingPathComponent("Matuta", isDirectory: true)
             .appendingPathComponent("alarms.json")
     }
 
@@ -750,7 +750,7 @@ Expected: PASS — 5개 테스트 전부 통과
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add Sources/DaybreakCore/AlarmStore.swift Tests/
+git add Sources/MatutaCore/AlarmStore.swift Tests/
 git commit -m "feat: 알람 JSON 영속화"
 ```
 
@@ -759,9 +759,9 @@ git commit -m "feat: 알람 JSON 영속화"
 ## Task 4: 스케줄러
 
 **Files:**
-- Create: `Sources/DaybreakCore/AlarmTimer.swift`
-- Create: `Sources/DaybreakCore/Scheduler.swift`
-- Test: `Tests/DaybreakCoreTests/SchedulerTests.swift`
+- Create: `Sources/MatutaCore/AlarmTimer.swift`
+- Create: `Sources/MatutaCore/Scheduler.swift`
+- Test: `Tests/MatutaCoreTests/SchedulerTests.swift`
 
 **Interfaces:**
 - Consumes: `Alarm`, `NextOccurrence`, `WallClock` (Task 1, 2)
@@ -774,12 +774,12 @@ git commit -m "feat: 알람 JSON 영속화"
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
-`Tests/DaybreakCoreTests/SchedulerTests.swift`:
+`Tests/MatutaCoreTests/SchedulerTests.swift`:
 
 ```swift
 import Testing
 import Foundation
-@testable import DaybreakCore
+@testable import MatutaCore
 
 private let seoul = TimeZone(identifier: "Asia/Seoul")!
 
@@ -909,7 +909,7 @@ Expected: FAIL — `cannot find 'Scheduler' in scope`, `cannot find 'AlarmTimer'
 
 - [ ] **Step 3: 최소 구현 작성**
 
-`Sources/DaybreakCore/AlarmTimer.swift`:
+`Sources/MatutaCore/AlarmTimer.swift`:
 
 ```swift
 import Foundation
@@ -946,7 +946,7 @@ public final class SystemAlarmTimer: AlarmTimer {
 }
 ```
 
-`Sources/DaybreakCore/Scheduler.swift`:
+`Sources/MatutaCore/Scheduler.swift`:
 
 ```swift
 import Foundation
@@ -1006,7 +1006,7 @@ Expected: PASS — 4개 테스트 전부 통과
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add Sources/DaybreakCore/AlarmTimer.swift Sources/DaybreakCore/Scheduler.swift Tests/
+git add Sources/MatutaCore/AlarmTimer.swift Sources/MatutaCore/Scheduler.swift Tests/
 git commit -m "feat: 알람 스케줄러"
 ```
 
@@ -1017,8 +1017,8 @@ git commit -m "feat: 알람 스케줄러"
 macOS 시스템 사운드(`/System/Library/Sounds/`)는 전부 1초 미만의 짧은 효과음이라 알람으로 못 쓴다. 그래서 **소리를 파일이 아니라 코드로 만든다.** 파일이 없으니 파일이 없어서 못 울릴 일도 없다 — 설계 문서 §7.4의 백업음이 이것이다.
 
 **Files:**
-- Create: `Sources/DaybreakCore/TonePattern.swift`
-- Test: `Tests/DaybreakCoreTests/TonePatternTests.swift`
+- Create: `Sources/MatutaCore/TonePattern.swift`
+- Test: `Tests/MatutaCoreTests/TonePatternTests.swift`
 
 **Interfaces:**
 - Consumes: 없음
@@ -1030,12 +1030,12 @@ macOS 시스템 사운드(`/System/Library/Sounds/`)는 전부 1초 미만의 �
 
 - [ ] **Step 1: 실패하는 테스트 작성**
 
-`Tests/DaybreakCoreTests/TonePatternTests.swift`:
+`Tests/MatutaCoreTests/TonePatternTests.swift`:
 
 ```swift
 import Testing
 import Foundation
-@testable import DaybreakCore
+@testable import MatutaCore
 
 @Test("한 주기 길이는 삑 소리와 침묵의 합이다")
 func cycleDurationIsSumOfParts() {
@@ -1101,7 +1101,7 @@ Expected: FAIL — `cannot find 'TonePattern' in scope`
 
 - [ ] **Step 3: 최소 구현 작성**
 
-`Sources/DaybreakCore/TonePattern.swift`:
+`Sources/MatutaCore/TonePattern.swift`:
 
 ```swift
 import Foundation
@@ -1194,7 +1194,7 @@ Expected: PASS — 5개 테스트 전부 통과
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add Sources/DaybreakCore/TonePattern.swift Tests/
+git add Sources/MatutaCore/TonePattern.swift Tests/
 git commit -m "feat: 코드로 만드는 백업 알람음"
 ```
 
@@ -1207,10 +1207,10 @@ git commit -m "feat: 코드로 만드는 백업 알람음"
 **Files:**
 - Create: `Resources/Info.plist`
 - Create: `Scripts/bundle.sh`
-- Create: `Sources/Daybreak/TonePlayer.swift`
-- Create: `Sources/Daybreak/AlarmListModel.swift`
-- Create: `Sources/Daybreak/AlarmListView.swift`
-- Modify: `Sources/Daybreak/DaybreakApp.swift` (Task 1에서 만든 자리채움을 완전히 대체)
+- Create: `Sources/Matuta/TonePlayer.swift`
+- Create: `Sources/Matuta/AlarmListModel.swift`
+- Create: `Sources/Matuta/AlarmListView.swift`
+- Modify: `Sources/Matuta/MatutaApp.swift` (Task 1에서 만든 자리채움을 완전히 대체)
 
 **Interfaces:**
 - Consumes: `Alarm`, `AlarmStore`, `Scheduler`, `SystemAlarmTimer`, `SystemClock`, `TonePattern` (Task 1–5)
@@ -1229,13 +1229,13 @@ git commit -m "feat: 코드로 만드는 백업 알람음"
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>Daybreak</string>
+    <string>Matuta</string>
     <key>CFBundleDisplayName</key>
-    <string>Daybreak</string>
+    <string>Matuta</string>
     <key>CFBundleIdentifier</key>
-    <string>com.daybreak.app</string>
+    <string>com.matuta.app</string>
     <key>CFBundleExecutable</key>
-    <string>Daybreak</string>
+    <string>Matuta</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -1254,21 +1254,21 @@ git commit -m "feat: 코드로 만드는 백업 알람음"
 
 ```bash
 #!/bin/bash
-# Daybreak.app 번들을 조립한다. SwiftUI 앱은 번들 안에서 실행해야
+# Matuta.app 번들을 조립한다. SwiftUI 앱은 번들 안에서 실행해야
 # Dock 아이콘과 창 활성화가 정상 동작한다.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 CONFIG="${1:-debug}"
-swift build -c "$CONFIG" --product Daybreak
+swift build -c "$CONFIG" --product Matuta
 
-BIN="$(swift build -c "$CONFIG" --product Daybreak --show-bin-path)/Daybreak"
-APP="build/Daybreak.app"
+BIN="$(swift build -c "$CONFIG" --product Matuta --show-bin-path)/Matuta"
+APP="build/Matuta.app"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/Daybreak"
+cp "$BIN" "$APP/Contents/MacOS/Matuta"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
 # 로컬 실행용 임시 서명. 배포용 Developer ID 서명은 나중 단계에서 다룬다.
@@ -1283,12 +1283,12 @@ chmod +x Scripts/bundle.sh
 
 - [ ] **Step 2: 톤 재생기 작성**
 
-`Sources/Daybreak/TonePlayer.swift`:
+`Sources/Matuta/TonePlayer.swift`:
 
 ```swift
 import AVFAudio
 import Foundation
-import DaybreakCore
+import MatutaCore
 
 /// `TonePattern`이 만든 파형을 실제 소리로 낸다. 끌 때까지 무한 반복한다.
 @MainActor
@@ -1367,12 +1367,12 @@ final class TonePlayer {
 
 - [ ] **Step 3: 목록 모델 작성**
 
-`Sources/Daybreak/AlarmListModel.swift`:
+`Sources/Matuta/AlarmListModel.swift`:
 
 ```swift
 import Foundation
 import Observation
-import DaybreakCore
+import MatutaCore
 
 @MainActor
 @Observable
@@ -1482,11 +1482,11 @@ final class AlarmListModel {
 
 - [ ] **Step 4: 목록 화면 작성**
 
-`Sources/Daybreak/AlarmListView.swift`:
+`Sources/Matuta/AlarmListView.swift`:
 
 ```swift
 import SwiftUI
-import DaybreakCore
+import MatutaCore
 
 struct AlarmListView: View {
     @Bindable var model: AlarmListModel
@@ -1568,14 +1568,14 @@ private struct AlarmRow: View {
 
 - [ ] **Step 5: 앱 진입점 교체**
 
-`Sources/Daybreak/DaybreakApp.swift` 내용을 전부 아래로 바꾼다.
+`Sources/Matuta/MatutaApp.swift` 내용을 전부 아래로 바꾼다.
 
 ```swift
 import SwiftUI
-import DaybreakCore
+import MatutaCore
 
 @main
-struct DaybreakApp: App {
+struct MatutaApp: App {
     @State private var model = AlarmListModel()
 
     var body: some Scene {
@@ -1591,19 +1591,19 @@ struct DaybreakApp: App {
 
 ```bash
 ./Scripts/bundle.sh
-open build/Daybreak.app
+open build/Matuta.app
 ```
 
 Expected:
 - 창이 뜨고 제목이 "알람"이다
 - 7:00 AM 알람이 **꺼진 상태로 하나** 보인다 (빈 화면이 아니다)
 - 토글을 켜고 앱을 껐다 켜면 켜진 상태가 유지된다
-- `cat ~/Library/Application\ Support/Daybreak/alarms.json` 에 그 알람이 보인다
+- `cat ~/Library/Application\ Support/Matuta/alarms.json` 에 그 알람이 보인다
 
 - [ ] **Step 7: 커밋**
 
 ```bash
-git add Resources/ Scripts/ Sources/Daybreak/
+git add Resources/ Scripts/ Sources/Matuta/
 git commit -m "feat: 알람 목록 창과 앱 번들"
 ```
 
@@ -1612,8 +1612,8 @@ git commit -m "feat: 알람 목록 창과 앱 번들"
 ## Task 7: 알람 편집 시트
 
 **Files:**
-- Create: `Sources/Daybreak/AlarmEditView.swift`
-- Modify: `Sources/Daybreak/AlarmListView.swift` (시트 표시 추가)
+- Create: `Sources/Matuta/AlarmEditView.swift`
+- Modify: `Sources/Matuta/AlarmListView.swift` (시트 표시 추가)
 
 **Interfaces:**
 - Consumes: `Alarm`, `Weekday` (Task 1), `AlarmListModel` (Task 6)
@@ -1623,11 +1623,11 @@ git commit -m "feat: 알람 목록 창과 앱 번들"
 
 시각은 타이핑이 기본이고, 알람별 설정은 볼륨·페이드인·스누즈 셋뿐이다 (설계 원칙 4). 사운드 선택은 2단계에서 옴니박스가 들어올 자리이므로 지금은 백업음 고정이라고 표시만 한다.
 
-`Sources/Daybreak/AlarmEditView.swift`:
+`Sources/Matuta/AlarmEditView.swift`:
 
 ```swift
 import SwiftUI
-import DaybreakCore
+import MatutaCore
 
 struct AlarmEditView: View {
     @State private var alarm: Alarm
@@ -1743,7 +1743,7 @@ struct AlarmEditView: View {
 
 - [ ] **Step 2: 목록에서 시트를 띄우도록 연결**
 
-`Sources/Daybreak/AlarmListView.swift`의 `.navigationTitle("알람")` 바로 아래에 다음을 추가한다.
+`Sources/Matuta/AlarmListView.swift`의 `.navigationTitle("알람")` 바로 아래에 다음을 추가한다.
 
 ```swift
         .sheet(item: $model.editing) { alarm in
@@ -1762,7 +1762,7 @@ struct AlarmEditView: View {
 
 ```bash
 ./Scripts/bundle.sh
-open build/Daybreak.app
+open build/Matuta.app
 ```
 
 Expected:
@@ -1776,7 +1776,7 @@ Expected:
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add Sources/Daybreak/
+git add Sources/Matuta/
 git commit -m "feat: 알람 편집 시트"
 ```
 
@@ -1787,9 +1787,9 @@ git commit -m "feat: 알람 편집 시트"
 이 계획의 핵심 태스크다. 여기가 동작하면 앱이 알람앱이 된다.
 
 **Files:**
-- Create: `Sources/Daybreak/AlarmOverlayWindow.swift`
-- Create: `Sources/Daybreak/AlarmOverlayView.swift`
-- Modify: `Sources/Daybreak/AlarmListModel.swift` (오버레이 창 띄우기/내리기)
+- Create: `Sources/Matuta/AlarmOverlayWindow.swift`
+- Create: `Sources/Matuta/AlarmOverlayView.swift`
+- Modify: `Sources/Matuta/AlarmListModel.swift` (오버레이 창 띄우기/내리기)
 
 **Interfaces:**
 - Consumes: `Alarm` (Task 1), `AlarmListModel` (Task 6)
@@ -1800,12 +1800,12 @@ git commit -m "feat: 알람 편집 시트"
 
 - [ ] **Step 1: 오버레이 창 작성**
 
-`Sources/Daybreak/AlarmOverlayWindow.swift`:
+`Sources/Matuta/AlarmOverlayWindow.swift`:
 
 ```swift
 import AppKit
 import SwiftUI
-import DaybreakCore
+import MatutaCore
 
 /// 전체화면을 점유하는 알람 창.
 ///
@@ -1880,11 +1880,11 @@ final class AlarmOverlayController {
 
 - [ ] **Step 2: 오버레이 화면 작성**
 
-`Sources/Daybreak/AlarmOverlayView.swift`:
+`Sources/Matuta/AlarmOverlayView.swift`:
 
 ```swift
 import SwiftUI
-import DaybreakCore
+import MatutaCore
 
 struct AlarmOverlayView: View {
     let alarm: Alarm
@@ -1961,7 +1961,7 @@ struct AlarmOverlayView: View {
 
 - [ ] **Step 3: 모델에 오버레이 연결**
 
-`Sources/Daybreak/AlarmListModel.swift`를 세 군데 고친다.
+`Sources/Matuta/AlarmListModel.swift`를 세 군데 고친다.
 
 프로퍼티 선언부에 컨트롤러를 추가한다. `private let player = TonePlayer()` 아래에:
 
@@ -1995,7 +1995,7 @@ struct AlarmOverlayView: View {
 
 ```bash
 ./Scripts/bundle.sh
-open build/Daybreak.app
+open build/Matuta.app
 ```
 
 지금 시각 기준 2분 뒤로 알람을 하나 만들고 켠 다음 기다린다.
@@ -2011,7 +2011,7 @@ Expected:
 - [ ] **Step 5: 커밋**
 
 ```bash
-git add Sources/Daybreak/
+git add Sources/Matuta/
 git commit -m "feat: 알람 오버레이와 스페이스바 해제"
 ```
 
@@ -2020,7 +2020,7 @@ git commit -m "feat: 알람 오버레이와 스페이스바 해제"
 ## Task 9: 메뉴바에 다음 알람 표시
 
 **Files:**
-- Modify: `Sources/Daybreak/DaybreakApp.swift`
+- Modify: `Sources/Matuta/MatutaApp.swift`
 
 **Interfaces:**
 - Consumes: `AlarmListModel.nextFireDate` (Task 6)
@@ -2028,14 +2028,14 @@ git commit -m "feat: 알람 오버레이와 스페이스바 해제"
 
 - [ ] **Step 1: 메뉴바 씬 추가**
 
-`Sources/Daybreak/DaybreakApp.swift` 내용을 전부 아래로 바꾼다.
+`Sources/Matuta/MatutaApp.swift` 내용을 전부 아래로 바꾼다.
 
 ```swift
 import SwiftUI
-import DaybreakCore
+import MatutaCore
 
 @main
-struct DaybreakApp: App {
+struct MatutaApp: App {
     @State private var model = AlarmListModel()
 
     var body: some Scene {
@@ -2068,7 +2068,7 @@ struct DaybreakApp: App {
 
 ```bash
 ./Scripts/bundle.sh
-open build/Daybreak.app
+open build/Matuta.app
 ```
 
 Expected:
@@ -2085,7 +2085,7 @@ Expected: PASS — Task 1~5의 테스트 24개가 전부 통과한다
 - [ ] **Step 4: 커밋**
 
 ```bash
-git add Sources/Daybreak/
+git add Sources/Matuta/
 git commit -m "feat: 메뉴바 다음 알람 표시"
 ```
 
@@ -2096,7 +2096,7 @@ git commit -m "feat: 메뉴바 다음 알람 표시"
 전부 만족해야 2단계로 넘어간다.
 
 - [ ] `swift test`가 통과한다
-- [ ] `./Scripts/bundle.sh`로 `build/Daybreak.app`이 만들어진다
+- [ ] `./Scripts/bundle.sh`로 `build/Matuta.app`이 만들어진다
 - [ ] 알람을 만들고 껐다 켜도 남아 있다
 - [ ] 정해둔 시각에 실제로 소리가 나고 화면이 덮인다
 - [ ] 스페이스바로 꺼지고, 다른 키로는 안 꺼진다
@@ -2107,5 +2107,5 @@ git commit -m "feat: 메뉴바 다음 알람 표시"
 ## 다음 계획으로 넘길 것
 
 - **2단계 (소스):** `SoundSource` 프로토콜, 6종 구현, 옴니박스, `PlaybackChain`. `AlarmListModel.fire(_:)`의 `player.start`가 `PlaybackChain`으로 교체되는 지점이다
-- **3단계 (신뢰성):** `AudioGuard`, `Preflight`, `PowerDaybreak`(Task 0 결과에 따라 방식 결정), 나이트스탠드 화면
+- **3단계 (신뢰성):** `AudioGuard`, `Preflight`, `PowerMatuta`(Task 0 결과에 따라 방식 결정), 나이트스탠드 화면
 - **배포:** Developer ID 서명과 공증. 지금은 임시 서명만 한다

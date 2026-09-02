@@ -1,4 +1,4 @@
-# Daybreak — macOS 알람앱 설계
+# Matuta — macOS 알람앱 설계
 
 작성일: 2026-09-02 · 이름 확정: 2026-09-02
 상태: 승인됨 — 1단계 구현 계획 작성 완료
@@ -9,7 +9,7 @@
 
 macOS 기본 시계 앱의 알람을 계승하되, **어떤 음악 소스로든 깨울 수 있고, 절대 안 울리는 일이 없는** 알람앱. 설정은 최소한으로 두고 신뢰성은 앱이 알아서 책임진다.
 
-이름은 **Daybreak**(동틀녘)로 확정했다. 같은 이름의 알람앱이 Android와 iOS에 있고 iOS 기본 알람음 이름이기도 하지만, macOS에는 없다.
+이름은 **Matuta**로 확정했다. 마테르 마투타(Mater Matuta)는 로마 신화의 새벽과 아침빛의 여신이며, 그 어근에서 라틴어 *matutinus*(아침의)와 프랑스어 *matin*이 나왔다. 앱스토어·소프트웨어 회사·일반 웹 검색에서 같은 이름의 제품을 찾지 못했다. 상표 데이터베이스는 검증하지 않았으므로, 유료화할 경우 정식 상표 검색이 따로 필요하다.
 
 ---
 
@@ -66,7 +66,7 @@ macOS Ventura부터 시계 앱에 알람이 들어왔지만 세 가지가 비어
 
 App Store를 택하지 않는 이유는 샌드박스가 전원 이벤트 API를 막아서, Awaken처럼 앱과 헬퍼를 2개 바이너리로 쪼개야 하기 때문이다. 그 복잡도는 "쉬움"이라는 최우선 원칙에 직접 타격이다.
 
-단, 나중에 마음이 바뀔 수 있으므로 **권한이 필요한 코드는 `PowerDaybreak` 한 곳에만 모아둔다.** App Store로 갈 경우 그 파일만 별도 헬퍼로 떼어내면 된다.
+단, 나중에 마음이 바뀔 수 있으므로 **권한이 필요한 코드는 `PowerMatuta` 한 곳에만 모아둔다.** App Store로 갈 경우 그 파일만 별도 헬퍼로 떼어내면 된다.
 
 ---
 
@@ -143,10 +143,10 @@ App Store를 택하지 않는 이유는 샌드박스가 전원 이벤트 API를 
 ## 6. 아키텍처
 
 ```
-Daybreak.app  (SwiftUI · Developer ID · 비샌드박스)
+Matuta.app  (SwiftUI · Developer ID · 비샌드박스)
 ├── AlarmStore        알람 목록 영속화 (JSON 파일 하나)
 ├── Scheduler         다음 발생 시각 계산 + 타이머 + 전원 이벤트 예약
-├── PowerDaybreak        절전 깨우기. 권한이 필요한 코드는 전부 여기만
+├── PowerMatuta        절전 깨우기. 권한이 필요한 코드는 전부 여기만
 ├── SoundSource       소스 플러그인 프로토콜
 │   ├── BuiltInSource / LocalFileSource   AVFoundation
 │   ├── StreamURLSource                   AVPlayer
@@ -163,7 +163,7 @@ Daybreak.app  (SwiftUI · Developer ID · 비샌드박스)
 
 **`SoundSource`가 이 설계의 중심이다.** 소스를 6개 지원하는 것이 아니라 인터페이스 하나를 6번 구현하는 것이다. `PlaybackChain`과 `Preflight`는 소스의 구체 타입을 전혀 모른다. YouTube 정책이 바뀌거나 새 서비스를 붙일 때 파일 하나만 추가하면 되고, 나머지 코드는 건드리지 않는다.
 
-**`PowerDaybreak`를 분리한 이유**는 §3.3에서 설명한 배포 전환 가능성 때문이다. 권한이 필요한 호출이 앱 전체에 흩어지면 나중에 떼어낼 수 없다.
+**`PowerMatuta`를 분리한 이유**는 §3.3에서 설명한 배포 전환 가능성 때문이다. 권한이 필요한 호출이 앱 전체에 흩어지면 나중에 떼어낼 수 없다.
 
 **`AudioGuard`와 `Preflight`는 같은 상태를 본다.** 차이는 시점뿐이다 — `Preflight`는 자기 전에 읽어서 알리고, `AudioGuard`는 울릴 때 읽어서 고친다. 판정 로직은 공유한다.
 
@@ -212,7 +212,7 @@ Daybreak.app  (SwiftUI · Developer ID · 비샌드박스)
 
 ### 8.1 저장
 
-알람 목록은 `~/Library/Application Support/Daybreak/alarms.json` 파일 하나에 저장한다. 데이터베이스는 쓰지 않는다.
+알람 목록은 `~/Library/Application Support/Matuta/alarms.json` 파일 하나에 저장한다. 데이터베이스는 쓰지 않는다.
 
 ```swift
 struct Alarm: Codable, Identifiable {
@@ -283,7 +283,7 @@ protocol SoundSource {
 `Scheduler`는 두 겹으로 동작한다.
 
 - **앱이 깨어 있을 때** — 타이머로 발화
-- **Mac이 절전 중일 때** — `PowerDaybreak`가 알람 2분 전에 전원 이벤트를 예약해 Mac을 깨운다
+- **Mac이 절전 중일 때** — `PowerMatuta`가 알람 2분 전에 전원 이벤트를 예약해 Mac을 깨운다
 
 두 겹을 다 두는 이유는 어느 한쪽이 실패해도 다른 쪽이 살아 있기 때문이다.
 
@@ -306,7 +306,7 @@ protocol SoundSource {
 **프로토콜 뒤로 숨겨 가짜 구현으로 테스트할 대상:**
 - `SoundSource` — 실패하는 가짜 소스로 폴백 동작 검증
 - `AudioGuard`가 읽고 쓰는 시스템 오디오 상태
-- `PowerDaybreak`
+- `PowerMatuta`
 
 현재 시각은 주입한다. 테스트가 실제 시계에 의존하지 않게 한다.
 
@@ -337,7 +337,7 @@ v1 범위가 작지 않으므로 네 단계로 나눈다. 각 단계는 그 자�
 | 0. 스파이크 | `IOPMSchedulePowerEvent` 권한 검증 (§9) | 온보딩 설계가 확정됨 |
 | 1. 뼈대 | AlarmStore, Scheduler, 목록 창, 편집 시트, 오버레이, 내장 사운드만 | **알람이 울리는 앱**이 된다 |
 | 2. 소스 | SoundSource 프로토콜 + 6종 구현, 옴니박스, PlaybackChain | 원하는 음악으로 깨울 수 있다 |
-| 3. 신뢰성 | AudioGuard, Preflight, PowerDaybreak 통합, 나이트스탠드 | 안 울릴 이유가 사라진다 |
+| 3. 신뢰성 | AudioGuard, Preflight, PowerMatuta 통합, 나이트스탠드 | 안 울릴 이유가 사라진다 |
 
 단계 1이 끝난 시점부터 매일 실제로 써보면서 나머지를 만든다. 알람앱은 직접 써보지 않으면 문제를 못 찾는다.
 
