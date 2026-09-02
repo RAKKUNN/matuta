@@ -34,6 +34,46 @@ public struct TonePattern: Sendable {
         beepCount: 3
     )
 
+    public static let beacon = TonePattern(
+        frequency: 520,
+        beepDuration: 0.25,
+        gapDuration: 0.35,
+        beepCount: 2
+    )
+
+    public static let chime = TonePattern(
+        frequency: 660,
+        beepDuration: 0.12,
+        gapDuration: 0.15,
+        beepCount: 4
+    )
+
+    public static let signal = TonePattern(
+        frequency: 1050,
+        beepDuration: 0.10,
+        gapDuration: 0.20,
+        beepCount: 2
+    )
+
+    public static let ripple = TonePattern(
+        frequency: 440,
+        beepDuration: 0.30,
+        gapDuration: 0.20,
+        beepCount: 3
+    )
+
+    public static let allBuiltInNames = ["Radar", "Beacon", "Chime", "Signal", "Ripple"]
+
+    public static func pattern(named name: String) -> TonePattern {
+        switch name.lowercased() {
+        case "beacon": return .beacon
+        case "chime": return .chime
+        case "signal": return .signal
+        case "ripple": return .ripple
+        default: return .radar
+        }
+    }
+
     public var cycleDuration: Double {
         (beepDuration + gapDuration) * Double(beepCount)
     }

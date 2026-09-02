@@ -25,7 +25,8 @@ final class BuiltInSource: SoundSource {
     }
 
     func play(volume: Double, fadeIn: Bool) async throws {
-        player.start(pattern: .radar, volume: volume, fadeIn: fadeIn)
+        let pattern = TonePattern.pattern(named: name)
+        player.start(pattern: pattern, volume: volume, fadeIn: fadeIn)
     }
 
     func stop() {
