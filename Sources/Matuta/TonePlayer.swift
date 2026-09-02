@@ -16,6 +16,7 @@ final class TonePlayer {
     func start(pattern: TonePattern, volume: Double, fadeIn: Bool) {
         stop()
 
+        let targetVol = Float(volume)
         let sampleRate = 44_100.0
         guard let format = AVAudioFormat(
             standardFormatWithSampleRate: sampleRate, channels: 1
@@ -34,7 +35,9 @@ final class TonePlayer {
         }
 
         engine.connect(player, to: engine.mainMixerNode, format: format)
-        engine.mainMixerNode.outputVolume = fadeIn ? 0.0 : Float(volume)
+        // 페이드인이 켜져 있어도 최초 0초에 완전 무음(0.0) 대신 작게 들릴 수 있는 최소 볼륨으로 시작
+        let initialVol = fadeIn ? min(targetVol, max(targetVol * 0.15, 0.08)) : targetVol
+        engine.mainMixerNode.outputVolume = initialVol
 
         do {
             try engine.start()
@@ -46,8 +49,8 @@ final class TonePlayer {
         player.scheduleBuffer(buffer, at: nil, options: .loops)
         player.play()
 
-        if fadeIn {
-            startFade(to: Float(volume))
+        if fadeIn && initialVol < targetVol {
+            startFade(from: initialVol, to: targetVol)
         }
     }
 
@@ -58,11 +61,11 @@ final class TonePlayer {
         engine.stop()
     }
 
-    /// 30초에 걸쳐 목표 볼륨까지 올린다.
-    private func startFade(to target: Float) {
-        let duration = 30.0
+    /// 20초에 걸쳐 목표 볼륨까지 부드럽게 올린다.
+    private func startFade(from initial: Float, to target: Float) {
+        let duration = 20.0
         let tick: Double = 0.5
-        let step = target / Float(duration / tick)
+        let step = (target - initial) / Float(duration / tick)
 
         fadeTask?.cancel()
         fadeTask = Task { @MainActor [weak self] in

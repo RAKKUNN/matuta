@@ -9,6 +9,7 @@ import MatutaCore
 /// 스누즈에 키보드로 도달할 수 없게 만드는 것이 이 규칙의 목적이다.
 final class AlarmOverlayWindow: NSWindow {
     private let onDismiss: () -> Void
+    private let presentedAt = Date()
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
@@ -32,6 +33,8 @@ final class AlarmOverlayWindow: NSWindow {
     override func keyDown(with event: NSEvent) {
         // 49 = 스페이스바
         if event.keyCode == 49 {
+            // 알람이 뜨는 순간 다른 앱에서 타이핑 중이던 스페이스바로 즉시 꺼지는 것 방지 (0.5초 쿨다운)
+            guard Date().timeIntervalSince(presentedAt) >= 0.5 else { return }
             onDismiss()
         }
         // 그 외 키는 의도적으로 무시한다. super를 부르지 않는다.
