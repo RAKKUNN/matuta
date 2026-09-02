@@ -74,16 +74,29 @@ struct AlarmListView: View {
             }
             Spacer()
 
-            Button(action: { model.addAlarm() }) {
-                Image(systemName: "plus")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 32, height: 32)
-                    .background(Color.primary.opacity(0.08))
-                    .clipShape(Circle())
+            HStack(spacing: 8) {
+                Button(action: { model.openNightstand() }) {
+                    Image(systemName: "moon.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.yellow.opacity(0.85))
+                        .frame(width: 32, height: 32)
+                        .background(Color.primary.opacity(0.08))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help("나이트스탠드 (전체화면 침대 시계 모드)")
+
+                Button(action: { model.addAlarm() }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 32, height: 32)
+                        .background(Color.primary.opacity(0.08))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help("새 알람 추가")
             }
-            .buttonStyle(.plain)
-            .help("새 알람 추가")
         }
     }
 

@@ -17,6 +17,10 @@ final class AlarmListModel {
     private let tonePlayer = TonePlayer()
     public let playbackChain = PlaybackChain()
     private let overlay = AlarmOverlayController()
+    private let powerManager = SystemPowerMatuta()
+    private let audioGuard = AudioGuard()
+    private let nightstand = NightstandController()
+    public let preflightEngine = PreflightEngine()
 
     init(store: AlarmStore = AlarmStore(fileURL: AlarmStore.defaultFileURL)) {
         self.store = store
@@ -38,6 +42,10 @@ final class AlarmListModel {
 
     var nextFireDate: Date? {
         scheduler?.nextFire?.date
+    }
+
+    var nextAlarm: Alarm? {
+        scheduler?.nextFire?.alarm
     }
 
     func toggle(_ alarm: Alarm) {
@@ -65,10 +73,18 @@ final class AlarmListModel {
         persist()
     }
 
-    /// 스페이스바로 알람을 완전히 껐을 때.
+    /// 나이트스탠드(전체화면 침대 시계 모드) 열기
+    func openNightstand() {
+        nightstand.show(nextFireDate: nextFireDate, nextAlarm: nextAlarm)
+    }
+
+    /// 스페이스바 또는 마우스 클릭으로 알람을 완전히 껐을 때.
     func dismissFiring() {
         playbackChain.stop()
+        audioGuard.restore()
+        powerManager.releaseSleepAssertion()
         overlay.hide()
+
         if let alarm = firing, alarm.weekdays.isEmpty {
             // 1회성 알람은 울리고 나면 꺼둔다.
             if let index = alarms.firstIndex(where: { $0.id == alarm.id }) {
@@ -83,6 +99,8 @@ final class AlarmListModel {
     func snoozeFiring() {
         guard let alarm = firing, let minutes = alarm.snoozeMinutes else { return }
         playbackChain.stop()
+        audioGuard.restore()
+        powerManager.releaseSleepAssertion()
         overlay.hide()
         firing = nil
 
@@ -96,6 +114,14 @@ final class AlarmListModel {
 
     private func fire(_ alarm: Alarm) {
         firing = alarm
+
+        // 1. 화면/시스템 절전 방지 활성화
+        powerManager.acquireSleepAssertion(reason: "Matuta Alarm Firing")
+
+        // 2. AudioGuard: 내장 스피커 강제 라우팅, 뮤트 해제, 볼륨 확보
+        audioGuard.protect(targetVolume: Float(alarm.volume))
+
+        // 3. 사운드 재생 체인 시작
         let primary = SoundSourceFactory.makeSource(for: alarm.source, tonePlayer: tonePlayer)
         let backup = SoundSourceFactory.backupSource(tonePlayer: tonePlayer)
 
@@ -108,6 +134,7 @@ final class AlarmListModel {
             )
         }
 
+        // 4. 전체화면 오버레이 표시
         overlay.show(
             alarm: alarm,
             playbackChain: playbackChain,
@@ -123,5 +150,12 @@ final class AlarmListModel {
 
     private func reschedule() {
         scheduler?.update(alarms: alarms)
+
+        // 다음 알람 2분 전 Mac 절전 깨우기 자동 예약
+        if let next = scheduler?.nextFire?.date {
+            powerManager.scheduleWake(at: next)
+        } else {
+            powerManager.cancelWake()
+        }
     }
 }
