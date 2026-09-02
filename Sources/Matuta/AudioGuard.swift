@@ -1,24 +1,45 @@
 import Foundation
 import CoreAudio
 import AudioToolbox
+import MatutaCore
 
-/// 시스템 오디오 출력을 감시하고, 알람 발화 시 내장 스피커로 강제 전환 및 볼륨을 확보하는 가드.
+/// 시스템 오디오 출력을 감시하고, 알람 발화 시 내장 스피커로 강제 전환 및 볼륨을 확보하는 하드웨어 어댑터.
 ///
-/// 설계 문서 §7.3:
+/// 설계 문서 §7.3 & 진단서 2.D:
 /// 1. 현재 출력 기기·볼륨·뮤트 상태를 저장
 /// 2. 목표 출력 기기(내장 스피커)로 전환, 뮤트 해제, 볼륨을 알람 볼륨까지 확보
 /// 3. 알람 해제 시 저장해둔 오디오 상태를 원상복구
 @MainActor
 public final class AudioGuard {
-    public struct AudioSnapshot {
+    public struct DeviceSnapshot {
         public let defaultDeviceID: AudioDeviceID
         public let volume: Float
         public let isMuted: Bool
     }
 
-    private var previousSnapshot: AudioSnapshot?
+    private var previousSnapshot: DeviceSnapshot?
 
     public init() {}
+
+    // MARK: - Snapshot Capture for Preflight
+
+    /// 순수 사전진단(Preflight)용 스냅샷 캡처
+    public func captureSnapshot() -> AudioSnapshot {
+        guard let currentDevice = getDefaultOutputDeviceID() else {
+            return AudioSnapshot(defaultDeviceName: "기본 오디오", isHeadphones: false, volume: 0.5, isMuted: false)
+        }
+        let name = getDeviceName(deviceID: currentDevice)
+        let isHeadphone = isHeadphones(deviceID: currentDevice)
+        let vol = getVolume(deviceID: currentDevice)
+        let muted = getMute(deviceID: currentDevice)
+
+        return AudioSnapshot(
+            defaultDeviceName: name,
+            isHeadphones: isHeadphone,
+            volume: vol,
+            isMuted: muted
+        )
+    }
 
     // MARK: - Protection & Restoration
 
@@ -30,7 +51,7 @@ public final class AudioGuard {
         let currentVol = getVolume(deviceID: currentDevice)
         let isMuted = getMute(deviceID: currentDevice)
 
-        self.previousSnapshot = AudioSnapshot(
+        self.previousSnapshot = DeviceSnapshot(
             defaultDeviceID: currentDevice,
             volume: currentVol,
             isMuted: isMuted
@@ -128,13 +149,11 @@ public final class AudioGuard {
             let transport = getDeviceTransportType(deviceID: id)
             let name = getDeviceName(deviceID: id).lowercased()
 
-            // 내장 트랜스포트이거나 이름에 스피커/speaker가 들어간 경우
             if transport == kAudioDeviceTransportTypeBuiltIn && (name.contains("speaker") || name.contains("스피커") || !name.contains("마이크")) {
                 return id
             }
         }
 
-        // fallback: 이름에 speaker가 포함된 디바이스
         for id in deviceIDs {
             let name = getDeviceName(deviceID: id).lowercased()
             if name.contains("speaker") || name.contains("스피커") {

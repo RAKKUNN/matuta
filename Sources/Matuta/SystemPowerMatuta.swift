@@ -19,6 +19,12 @@ public final class SystemPowerMatuta: PowerManagement, @unchecked Sendable {
 
     public init() {}
 
+    public var isWakeScheduled: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return scheduledDate != nil
+    }
+
     @discardableResult
     public func scheduleWake(at date: Date) -> Bool {
         lock.lock()
