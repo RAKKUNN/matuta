@@ -11,6 +11,8 @@ struct NightstandView: View {
     @State private var isControlsVisible: Bool = true
     @State private var idleTimer: Timer?
     @State private var isCloseHovered: Bool = false
+    @State private var candleFlicker: Bool = false
+    @State private var pixelShiftOffset: CGSize = .zero
 
     private var theme: CozyTheme {
         ThemeManager.shared.current
@@ -23,6 +25,19 @@ struct NightstandView: View {
         ZStack {
             // 저자극 딥 앰비언트 배경
             theme.baseBackground.ignoresSafeArea()
+
+            // 부드러운 촛불/모닥불 앰비언트 글로우
+            RadialGradient(
+                colors: [
+                    theme.accent.opacity(candleFlicker ? 0.18 : 0.10),
+                    Color.clear
+                ],
+                center: .center,
+                startRadius: 50,
+                endRadius: 550
+            )
+            .ignoresSafeArea()
+            .blur(radius: 60)
 
             VStack(spacing: 0) {
                 // 상단 컨트롤 바 (마우스 조작 시 페이드인)
@@ -63,13 +78,13 @@ struct NightstandView: View {
 
                 Spacer()
 
-                // 대형 저자극 디지털 시계
+                // 대형 저자극 디지털 시계 (OLED 번인 방지 픽셀 시프트 적용)
                 VStack(spacing: 12) {
                     Text(now, format: .dateTime.hour().minute())
                         .font(.system(size: 136, weight: .ultraLight, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Color.white.opacity(0.92))
-                        .shadow(color: theme.accent.opacity(0.12), radius: 30, y: 0)
+                        .shadow(color: theme.accent.opacity(candleFlicker ? 0.25 : 0.12), radius: 30, y: 0)
 
                     // 다음 알람 및 카운트다운
                     if let next = nextFireDate {
@@ -102,6 +117,7 @@ struct NightstandView: View {
                             .foregroundStyle(Color.white.opacity(0.35))
                     }
                 }
+                .offset(pixelShiftOffset)
 
                 Spacer()
 
@@ -122,7 +138,15 @@ struct NightstandView: View {
                 .opacity(isControlsVisible ? 1 : 0.25)
             }
         }
-        .onReceive(tick) { now = $0 }
+        .onReceive(tick) { time in
+            now = time
+            updatePixelShift(at: time)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
+                candleFlicker = true
+            }
+        }
         .task {
             report = await engine.evaluate(alarm: nextAlarm)
         }
@@ -151,6 +175,16 @@ struct NightstandView: View {
             MainActor.assumeIsolated {
                 isControlsVisible = false
             }
+        }
+    }
+
+    private func updatePixelShift(at date: Date) {
+        let minute = Calendar.current.component(.minute, from: date)
+        let angle = Double(minute) * (Double.pi / 30.0)
+        let shiftX = cos(angle) * 4.0
+        let shiftY = sin(angle) * 3.0
+        withAnimation(.easeInOut(duration: 2.0)) {
+            self.pixelShiftOffset = CGSize(width: shiftX, height: shiftY)
         }
     }
 

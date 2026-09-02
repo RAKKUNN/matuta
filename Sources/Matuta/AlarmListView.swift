@@ -31,13 +31,16 @@ struct AlarmListView: View {
                 ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 12) {
                         ForEach(model.alarms) { alarm in
-                            ArtisanAlarmCard(alarm: alarm) {
-                                model.toggle(alarm)
-                            } onEdit: {
-                                model.editing = alarm
-                            } onDelete: {
-                                model.delete(alarm)
-                            }
+                            let isSnoozing = model.snoozingAlarmID == alarm.id
+                            ArtisanAlarmCard(
+                                alarm: alarm,
+                                isSnoozing: isSnoozing,
+                                snoozeUntil: model.snoozeUntil,
+                                onCancelSnooze: { model.cancelSnooze() },
+                                onToggle: { model.toggle(alarm) },
+                                onEdit: { model.editing = alarm },
+                                onDelete: { model.delete(alarm) }
+                            )
                         }
                     }
                     .padding(20)
@@ -203,7 +206,7 @@ struct AlarmListView: View {
             minute: minute,
             weekdays: [],
             label: label,
-            source: .builtIn(name: "Ripple"),
+            source: .builtIn(name: "Morning Harp"),
             volume: 0.8,
             fadeIn: true,
             snoozeMinutes: 9,
@@ -272,22 +275,55 @@ struct AlarmListView: View {
     }
 }
 
-// MARK: - 아티잔 알람 카드
+// MARK: - 아티잔 알람 카드 & 마이크로 인터랙션
 
 private struct ArtisanAlarmCard: View {
     let alarm: Alarm
+    let isSnoozing: Bool
+    let snoozeUntil: Date?
+    let onCancelSnooze: () -> Void
     let onToggle: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     @State private var isHovered = false
+    @State private var now = Date()
+
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var theme: CozyTheme {
         ThemeManager.shared.current
     }
 
     var body: some View {
-        Button(action: onEdit) {
+        VStack(spacing: 8) {
+            // 스누즈 진행 배지 (스누즈 중일 때 상단 표시)
+            if isSnoozing, let until = snoozeUntil {
+                HStack {
+                    HStack(spacing: 5) {
+                        Image(systemName: "moon.zzz.fill")
+                            .font(.system(size: 10))
+                        Text("스누즈 진행 중 · \(countdownText(to: until))")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    }
+                    .foregroundStyle(theme.accent)
+
+                    Spacer()
+
+                    Button(action: onCancelSnooze) {
+                        Text("취소")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(theme.textSecondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(theme.isLight ? Color.black.opacity(0.06) : Color.white.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 4)
+            }
+
             HStack(alignment: .center, spacing: 14) {
                 // 시간 및 메타데이터
                 VStack(alignment: .leading, spacing: 6) {
@@ -336,26 +372,53 @@ private struct ArtisanAlarmCard: View {
 
                 Spacer()
 
+                // 호버 시 노출되는 빠른 액션 버튼 (편집 & 삭제)
+                HStack(spacing: 6) {
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(theme.textSecondary)
+                            .frame(width: 26, height: 26)
+                            .background(theme.isLight ? Color.black.opacity(0.05) : Color.white.opacity(0.08))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("알람 편집")
+
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.red.opacity(0.85))
+                            .frame(width: 26, height: 26)
+                            .background(theme.isLight ? Color.black.opacity(0.05) : Color.white.opacity(0.08))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("알람 삭제")
+                }
+                .opacity(isHovered ? 1 : 0)
+                .animation(.easeInOut(duration: 0.18), value: isHovered)
+
                 // 커스텀 Cozy 스위치
                 CozyToggle(isOn: Binding(
                     get: { alarm.isEnabled },
                     set: { _ in onToggle() }
                 ), accent: theme.accent)
             }
-            .frame(maxWidth: .infinity)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isHovered ? theme.cardBackgroundHover : theme.cardBackground)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(isHovered ? theme.highlightStroke : theme.subtleStroke, lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(theme.isLight ? 0.04 : 0.2), radius: isHovered ? 8 : 3, y: 2)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(isHovered ? theme.cardBackgroundHover : theme.cardBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(isSnoozing ? theme.accent.opacity(0.6) : (isHovered ? theme.highlightStroke : theme.subtleStroke), lineWidth: isSnoozing ? 1.5 : 1)
+        )
+        .shadow(color: Color.black.opacity(theme.isLight ? 0.04 : 0.2), radius: isHovered ? 8 : 3, y: 2)
         .onHover { isHovered = $0 }
+        .onReceive(timer) { now = $0 }
         .contextMenu {
             Button("편집...") { onEdit() }
             Divider()
@@ -422,5 +485,12 @@ private struct ArtisanAlarmCard: View {
         case .web(let url):
             return url.host ?? "웹"
         }
+    }
+
+    private func countdownText(to date: Date) -> String {
+        let diff = max(0, Int(date.timeIntervalSince(now)))
+        let minutes = diff / 60
+        let seconds = diff % 60
+        return String(format: "%02d:%02d 남음", minutes, seconds)
     }
 }

@@ -25,10 +25,15 @@ enum SourceTab: String, CaseIterable, Identifiable {
     }
 }
 
+enum TimeFieldFocus {
+    case hour
+    case minute
+}
+
 struct AlarmEditView: View {
     @State private var alarm: Alarm
     @State private var selectedTab: SourceTab = .builtIn
-    @State private var builtInName: String = "Radar"
+    @State private var builtInName: String = "Morning Harp"
     @State private var localFileName: String = ""
     @State private var spotifyInput: String = ""
     @State private var webInput: String = "https://www.youtube.com/watch?v=jfKfPfyJRdk"
@@ -41,6 +46,8 @@ struct AlarmEditView: View {
 
     @State private var isPM: Bool = false
     @State private var hour12: Int = 7
+    @State private var focusedField: TimeFieldFocus = .hour
+    @State private var typingBuffer: String = ""
 
     private let onSave: (Alarm) -> Void
     private let onCancel: () -> Void
@@ -68,8 +75,8 @@ struct AlarmEditView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
-                    // 1. 타임 스컬프터
-                    timeSculptorSection
+                    // 1. 스마트 인터랙티브 타임 스컬프터
+                    tactileTimeSculptor
 
                     // 2. 반복 요일
                     weekdaySection
@@ -136,39 +143,52 @@ struct AlarmEditView: View {
         .padding(.vertical, 16)
     }
 
-    // MARK: - 1. Time Sculptor
+    // MARK: - 1. Tactile Time Sculptor Engine
 
-    private var timeSculptorSection: some View {
+    private var tactileTimeSculptor: some View {
         VStack(spacing: 12) {
             HStack(spacing: 14) {
-                // 디지털 시계 박스
-                HStack(spacing: 2) {
-                    TextField("", value: $hour12, format: .number)
-                        .frame(width: 64)
+                // 스마트 디지털 타임 조각기
+                HStack(spacing: 8) {
+                    // 시(Hour) 블록
+                    timeUnitBlock(
+                        valueString: String(format: "%02d", hour12),
+                        isFocused: focusedField == .hour,
+                        onTap: { focusedField = .hour },
+                        onIncrement: { incrementHour(1) },
+                        onDecrement: { incrementHour(-1) }
+                    )
+
                     Text(":")
-                        .font(.system(size: 46, weight: .ultraLight, design: .rounded))
-                        .foregroundStyle(theme.textSecondary)
+                        .font(.system(size: 42, weight: .ultraLight, design: .rounded))
+                        .foregroundStyle(theme.textSecondary.opacity(0.6))
                         .offset(y: -2)
-                    TextField("", value: $alarm.minute, format: .number)
-                        .frame(width: 64)
+
+                    // 분(Minute) 블록
+                    timeUnitBlock(
+                        valueString: String(format: "%02d", alarm.minute),
+                        isFocused: focusedField == .minute,
+                        onTap: { focusedField = .minute },
+                        onIncrement: { incrementMinute(1) },
+                        onDecrement: { incrementMinute(-1) }
+                    )
                 }
-                .textFieldStyle(.plain)
-                .font(.system(size: 48, weight: .light, design: .rounded))
-                .monospacedDigit()
-                .multilineTextAlignment(.center)
-                .foregroundStyle(theme.textPrimary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(8)
                 .background(theme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .strokeBorder(theme.subtleStroke, lineWidth: 1)
                 )
 
                 // AM / PM 토글
                 VStack(spacing: 4) {
-                    Button(action: { isPM = false; syncTime24() }) {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                            isPM = false
+                            syncTime24()
+                        }
+                    }) {
                         Text("AM")
                             .font(.system(size: 12, weight: !isPM ? .bold : .medium))
                             .frame(width: 46, height: 28)
@@ -178,7 +198,12 @@ struct AlarmEditView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Button(action: { isPM = true; syncTime24() }) {
+                    Button(action: {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                            isPM = true
+                            syncTime24()
+                        }
+                    }) {
                         Text("PM")
                             .font(.system(size: 12, weight: isPM ? .bold : .medium))
                             .frame(width: 46, height: 28)
@@ -199,21 +224,72 @@ struct AlarmEditView: View {
                 quickTimeChip("08:30", h: 8, m: 30, pm: false)
             }
         }
-        .onChange(of: hour12) { _, new in
-            hour12 = min(12, max(1, new))
+    }
+
+    private func timeUnitBlock(
+        valueString: String,
+        isFocused: Bool,
+        onTap: @escaping () -> Void,
+        onIncrement: @escaping () -> Void,
+        onDecrement: @escaping () -> Void
+    ) -> some View {
+        VStack(spacing: 2) {
+            Button(action: onIncrement) {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(isFocused ? theme.accent : theme.textTertiary)
+                    .frame(width: 60, height: 14)
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onTap) {
+                Text(valueString)
+                    .font(.system(size: 44, weight: .light, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(isFocused ? (theme.isLight ? theme.accent : Color.white) : theme.textSecondary)
+                    .frame(width: 64, height: 48)
+                    .background(isFocused ? theme.accent.opacity(0.12) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onDecrement) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(isFocused ? theme.accent : theme.textTertiary)
+                    .frame(width: 60, height: 14)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func incrementHour(_ delta: Int) {
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+            var next = hour12 + delta
+            if next > 12 { next = 1 }
+            if next < 1 { next = 12 }
+            hour12 = next
             syncTime24()
         }
-        .onChange(of: alarm.minute) { _, new in
-            alarm.minute = min(59, max(0, new))
+    }
+
+    private func incrementMinute(_ delta: Int) {
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+            var next = alarm.minute + delta
+            if next > 59 { next = 0 }
+            if next < 0 { next = 59 }
+            alarm.minute = next
         }
     }
 
     private func quickTimeChip(_ label: String, h: Int, m: Int, pm: Bool) -> some View {
         Button(action: {
-            hour12 = h
-            alarm.minute = m
-            isPM = pm
-            syncTime24()
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                hour12 = h
+                alarm.minute = m
+                isPM = pm
+                syncTime24()
+            }
         }) {
             Text(label)
                 .font(.system(size: 11, weight: .medium, design: .monospaced))
@@ -328,7 +404,7 @@ struct AlarmEditView: View {
                     .foregroundStyle(theme.accent)
             }
 
-            // 아이콘 전용 사운드 바 (글씨 없음)
+            // 아이콘 전용 사운드 바
             HStack(spacing: 4) {
                 ForEach(SourceTab.allCases) { tab in
                     let isSelected = selectedTab == tab
@@ -374,7 +450,7 @@ struct AlarmEditView: View {
         case .builtIn:
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Picker("벨소리", selection: $builtInName) {
+                    Picker("사운드스케이프", selection: $builtInName) {
                         ForEach(TonePattern.allBuiltInNames, id: \.self) { name in
                             Text(name).tag(name)
                         }
@@ -403,7 +479,7 @@ struct AlarmEditView: View {
                     .buttonStyle(.plain)
                 }
 
-                Text("네트워크나 파일 손상 없이 언제든 100% 울리는 순수 합성 파형입니다.")
+                Text("외부 파일이나 인터넷 연결 없이 100% 무손실로 울리는 스튜디오 어쿠스틱 사운드입니다.")
                     .font(.system(size: 11))
                     .foregroundStyle(theme.textSecondary)
             }
@@ -473,7 +549,7 @@ struct AlarmEditView: View {
                     presetChip("Lofi Beats", text: "spotify:playlist:37i9dQZF1DXdLEN7aqioXM")
                 }
 
-                Text("Spotify 실행과 동시에 Radar 백업음이 함께 재생되어 무음 실패를 방지합니다.")
+                Text("Spotify 실행과 동시에 Morning Harp 백업음이 함께 재생되어 무음 실패를 방지합니다.")
                     .font(.system(size: 11))
                     .foregroundStyle(theme.textSecondary)
             }
@@ -531,7 +607,7 @@ struct AlarmEditView: View {
                     radioPresetChip("Classic", url: "https://icecast.vrt.be/klara-high.mp3")
                 }
 
-                Text("스트림 연결 실패 시 즉시 Radar 백업음으로 자동 대체됩니다.")
+                Text("스트림 연결 실패 시 즉시 Morning Harp 백업음으로 자동 대체됩니다.")
                     .font(.system(size: 11))
                     .foregroundStyle(theme.textSecondary)
             }
@@ -578,11 +654,11 @@ struct AlarmEditView: View {
                         .foregroundStyle(theme.textSecondary)
 
                     Slider(value: $alarm.volume, in: 0...1) { _ in
-                        // 슬라이더 조작 시 0.25초 간격으로 볼륨 크기 피드백
                         if Date().timeIntervalSince(lastVolumeFeedbackTime) > 0.25 {
                             lastVolumeFeedbackTime = Date()
-                            previewPlayer.start(pattern: .beacon, volume: alarm.volume, fadeIn: false)
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            let pattern = TonePattern.pattern(named: builtInName)
+                            previewPlayer.start(pattern: pattern, volume: alarm.volume, fadeIn: false)
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
                                 if !isPreviewing { previewPlayer.stop() }
                             }
                         }

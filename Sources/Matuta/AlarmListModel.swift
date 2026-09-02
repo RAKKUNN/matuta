@@ -12,6 +12,11 @@ final class AlarmListModel {
     /// 지금 울리고 있는 알람. `nil`이면 오버레이가 안 떠 있다.
     var firing: Alarm?
 
+    /// 현재 스누즈 진행 중인 알람 정보
+    var snoozingAlarmID: UUID?
+    var snoozeUntil: Date?
+    private var snoozeTimer: Timer?
+
     private let store: AlarmStore
     private var scheduler: Scheduler?
     private let tonePlayer = TonePlayer()
@@ -26,7 +31,6 @@ final class AlarmListModel {
         self.store = store
 
         let loaded = store.load()
-        // 첫 실행 시 빈 화면을 보여주지 않는다 (설계 원칙).
         alarms = loaded.isEmpty ? AlarmStore.seedAlarms : loaded
 
         scheduler = Scheduler(
@@ -41,21 +45,30 @@ final class AlarmListModel {
     }
 
     var nextFireDate: Date? {
-        scheduler?.nextFire?.date
+        if let snooze = snoozeUntil, snooze > Date() {
+            return snooze
+        }
+        return scheduler?.nextFire?.date
     }
 
     var nextAlarm: Alarm? {
-        scheduler?.nextFire?.alarm
+        if let snoozingID = snoozingAlarmID, let alarm = alarms.first(where: { $0.id == snoozingID }) {
+            return alarm
+        }
+        return scheduler?.nextFire?.alarm
     }
 
     func toggle(_ alarm: Alarm) {
         guard let index = alarms.firstIndex(where: { $0.id == alarm.id }) else { return }
         alarms[index].isEnabled.toggle()
+        if !alarms[index].isEnabled && snoozingAlarmID == alarm.id {
+            cancelSnooze()
+        }
         persist()
     }
 
     func addAlarm() {
-        editing = Alarm(hour: 7, minute: 0)
+        editing = Alarm(hour: 7, minute: 0, source: .builtIn(name: "Morning Harp"))
     }
 
     func save(_ alarm: Alarm) {
@@ -69,6 +82,9 @@ final class AlarmListModel {
     }
 
     func delete(_ alarm: Alarm) {
+        if snoozingAlarmID == alarm.id {
+            cancelSnooze()
+        }
         alarms.removeAll { $0.id == alarm.id }
         persist()
     }
@@ -105,15 +121,30 @@ final class AlarmListModel {
         firing = nil
 
         let snoozeAt = Date().addingTimeInterval(Double(minutes) * 60)
-        Timer.scheduledTimer(withTimeInterval: snoozeAt.timeIntervalSinceNow, repeats: false) { _ in
-            MainActor.assumeIsolated { [weak self] in
+        self.snoozingAlarmID = alarm.id
+        self.snoozeUntil = snoozeAt
+
+        snoozeTimer?.invalidate()
+        snoozeTimer = Timer.scheduledTimer(withTimeInterval: snoozeAt.timeIntervalSinceNow, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.snoozingAlarmID = nil
+                self?.snoozeUntil = nil
                 self?.fire(alarm)
             }
         }
     }
 
+    func cancelSnooze() {
+        snoozeTimer?.invalidate()
+        snoozeTimer = nil
+        snoozingAlarmID = nil
+        snoozeUntil = nil
+    }
+
     private func fire(_ alarm: Alarm) {
         firing = alarm
+        snoozingAlarmID = nil
+        snoozeUntil = nil
 
         // 1. 화면/시스템 절전 방지 활성화
         powerManager.acquireSleepAssertion(reason: "Matuta Alarm Firing")
