@@ -8,34 +8,18 @@ import MatutaCore
 /// 호출하지 않으므로 다른 키를 눌러도 아무 일이 없고 비프음도 안 난다.
 /// 스누즈에 키보드로 도달할 수 없게 만드는 것이 이 규칙의 목적이다.
 final class AlarmOverlayWindow: NSWindow {
-    private let onDismiss: () -> Void
-    private let presentedAt = Date()
+    var onDismiss: (() -> Void)?
+    var presentedAt: Date = Date()
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
-
-    init(screen: NSScreen, onDismiss: @escaping () -> Void) {
-        self.onDismiss = onDismiss
-        super.init(
-            contentRect: screen.frame,
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false,
-            screen: screen
-        )
-        level = .screenSaver
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        isOpaque = true
-        backgroundColor = .black
-        hasShadow = false
-    }
 
     override func keyDown(with event: NSEvent) {
         // 49 = 스페이스바
         if event.keyCode == 49 {
             // 알람이 뜨는 순간 다른 앱에서 타이핑 중이던 스페이스바로 즉시 꺼지는 것 방지 (0.5초 쿨다운)
             guard Date().timeIntervalSince(presentedAt) >= 0.5 else { return }
-            onDismiss()
+            onDismiss?()
         }
         // 그 외 키는 의도적으로 무시한다. super를 부르지 않는다.
     }
@@ -54,7 +38,20 @@ final class AlarmOverlayController {
         hide()
 
         for screen in NSScreen.screens {
-            let window = AlarmOverlayWindow(screen: screen, onDismiss: onDismiss)
+            let window = AlarmOverlayWindow(
+                contentRect: screen.frame,
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
+            window.setFrame(screen.frame, display: true)
+            window.onDismiss = onDismiss
+            window.presentedAt = Date()
+            window.level = .screenSaver
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+            window.isOpaque = true
+            window.backgroundColor = .black
+            window.hasShadow = false
             window.contentView = NSHostingView(
                 rootView: AlarmOverlayView(alarm: alarm, onSnooze: onSnooze)
             )
