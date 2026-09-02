@@ -12,23 +12,41 @@ final class AlarmListModel {
     /// 지금 울리고 있는 알람. `nil`이면 오버레이가 안 떠 있다.
     var firing: Alarm?
 
-    /// 현재 스누즈 상태 (코어 모델)
+    /// 현재 스누즈 상태
     var snoozeState: SnoozeState?
     private var snoozeTimer: Timer?
     private var fireTask: Task<Void, Never>?
 
     private let store: AlarmStore
     private var scheduler: Scheduler?
-    private let tonePlayer = TonePlayer()
-    public let playbackChain = PlaybackChain()
-    private let overlay = AlarmOverlayController()
-    private let powerManager = SystemPowerMatuta()
-    private let audioGuard = AudioGuard()
-    private let nightstand = NightstandController()
-    public let preflightEngine = PreflightEngine()
+    private let tonePlayer: TonePlayer
+    private let playbackChain: PlaybackChain
+    private let overlay: AlarmOverlayController
+    private let powerManager: SystemPowerMatuta
+    private let audioGuard: AudioGuard
+    private let nightstand: NightstandController
+    private let preflightEngine: PreflightEngine
 
-    init(store: AlarmStore = AlarmStore(fileURL: AlarmStore.defaultFileURL)) {
+    init(
+        store: AlarmStore = AlarmStore(fileURL: AlarmStore.defaultFileURL),
+        clock: WallClock = SystemClock(),
+        calendar: Calendar = Calendar.current,
+        timer: AlarmTimer = SystemAlarmTimer(),
+        tonePlayer: TonePlayer = TonePlayer(),
+        playbackChain: PlaybackChain = PlaybackChain(),
+        overlay: AlarmOverlayController = AlarmOverlayController(),
+        powerManager: SystemPowerMatuta = SystemPowerMatuta(),
+        audioGuard: AudioGuard = AudioGuard(),
+        nightstand: NightstandController = NightstandController()
+    ) {
         self.store = store
+        self.tonePlayer = tonePlayer
+        self.playbackChain = playbackChain
+        self.overlay = overlay
+        self.powerManager = powerManager
+        self.audioGuard = audioGuard
+        self.nightstand = nightstand
+        self.preflightEngine = PreflightEngine(audioGuard: audioGuard, powerManager: powerManager)
 
         let payload = store.loadPayload()
         let loadedAlarms = payload.alarms
@@ -41,7 +59,6 @@ final class AlarmListModel {
                 self.snoozeState = snooze
                 armSnoozeTimer(snooze)
             } else if abs(snooze.fireAt.timeIntervalSince(now)) < 60, let alarm = self.alarms.first(where: { $0.id == snooze.alarmID }) {
-                // 앱 종료 중 스누즈 시각이 막 지난 경우 즉시 발화
                 DispatchQueue.main.async { [weak self] in
                     self?.fire(alarm)
                 }
@@ -49,9 +66,9 @@ final class AlarmListModel {
         }
 
         scheduler = Scheduler(
-            clock: SystemClock(),
-            calendar: Calendar.current,
-            timer: SystemAlarmTimer(),
+            clock: clock,
+            calendar: calendar,
+            timer: timer,
             onFire: { [weak self] alarm in
                 self?.fire(alarm)
             }
@@ -121,7 +138,6 @@ final class AlarmListModel {
         overlay.hide()
 
         if let alarm = firing, alarm.weekdays.isEmpty {
-            // 1회성 알람은 울리고 나면 꺼둔다.
             if let index = alarms.firstIndex(where: { $0.id == alarm.id }) {
                 alarms[index].isEnabled = false
             }
@@ -215,7 +231,6 @@ final class AlarmListModel {
     private func reschedule() {
         scheduler?.update(alarms: alarms, snooze: snoozeState)
 
-        // 단일 통합 nextFire 시각 기준 2분 전 절전 깨우기 예약 (스누즈 포함)
         if let next = scheduler?.nextFire?.date {
             powerManager.scheduleWake(at: next)
         } else {
