@@ -40,6 +40,14 @@ final class SpotifySource: SoundSource {
         if let script = NSAppleScript(source: scriptSource) {
             var errorInfo: NSDictionary?
             script.executeAndReturnError(&errorInfo)
+            if let error = errorInfo {
+                // 자동화 권한이 없거나 Spotify가 응답하지 않는 경우.
+                // 삼키지 않고 알린다 — needsBackupTone 덕에 소리는 계속 난다.
+                throw NSError(
+                    domain: "SpotifySource", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: error.description]
+                )
+            }
         }
     }
 

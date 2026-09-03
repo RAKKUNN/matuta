@@ -139,6 +139,11 @@ final class AlarmListModel {
     }
 
     /// 안전 볼륨으로 즉시 조정
+    /// 자동화 권한 경고 복구: 다음에 울릴 알람의 소스를 기준으로 처리한다.
+    func resolveAutomation() {
+        preflightEngine.resolveAutomation(for: nextAlarm)
+    }
+
     func setVolumeToSafeLevel(_ volume: Float = 0.7) {
         preflightEngine.setVolumeToSafeLevel(volume)
     }

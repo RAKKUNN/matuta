@@ -350,6 +350,8 @@ struct AlarmListView: View {
             model.switchToBuiltInSpeaker()
         case .muted, .lowVolume:
             model.setVolumeToSafeLevel(0.7)
+        case .automationDenied:
+            model.resolveAutomation()
         case .wakeNotScheduled:
             break
         }

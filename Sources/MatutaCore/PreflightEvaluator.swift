@@ -13,6 +13,7 @@ public struct PreflightWarning: Sendable, Equatable, Identifiable {
         case muted
         case lowVolume
         case wakeNotScheduled
+        case automationDenied
     }
 
     public enum Severity: Sendable, Equatable {
@@ -134,7 +135,8 @@ public struct PreflightEvaluator: Sendable {
         audio: AudioSnapshot,
         wakeScheduled: Bool,
         isSleepPrevented: Bool = false,
-        alarm: Alarm?
+        alarm: Alarm?,
+        automation: AutomationSnapshot = .notRequired
     ) -> PreflightReport {
         var warnings: [PreflightWarning] = []
 
@@ -177,6 +179,41 @@ public struct PreflightEvaluator: Sendable {
                 icon: "bolt.slash.fill",
                 actionLabel: nil
             ))
+        }
+
+        // 4. 외부 앱 자동화 권한.
+        //    볼륨·출력기기와 달리 AudioGuard가 발화 시점에 고쳐줄 수 없다.
+        //    권한이 없으면 사용자가 고른 음악은 재생되지 않는다(백업음만 울린다).
+        if !automation.canPlay {
+            let target = automation.targetName
+            switch automation.status {
+            case .denied:
+                warnings.append(PreflightWarning(
+                    kind: .automationDenied,
+                    message: "\(target) 제어 권한이 꺼져 있습니다 (백업음만 울립니다)",
+                    severity: .warning,
+                    icon: "lock.slash.fill",
+                    actionLabel: "설정 열기"
+                ))
+            case .notDetermined:
+                warnings.append(PreflightWarning(
+                    kind: .automationDenied,
+                    message: "\(target) 제어 권한이 아직 허용되지 않았습니다",
+                    severity: .warning,
+                    icon: "lock.open.fill",
+                    actionLabel: "권한 허용"
+                ))
+            case .appNotInstalled:
+                warnings.append(PreflightWarning(
+                    kind: .automationDenied,
+                    message: "\(target) 앱이 설치되어 있지 않습니다 (백업음만 울립니다)",
+                    severity: .warning,
+                    icon: "questionmark.app.fill",
+                    actionLabel: nil
+                ))
+            case .notRequired, .granted, .unknown:
+                break
+            }
         }
 
         let isSafe = warnings.filter({ $0.severity == .warning }).isEmpty

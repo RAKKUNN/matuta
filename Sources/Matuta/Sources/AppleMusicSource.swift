@@ -12,7 +12,9 @@ final class AppleMusicSource: SoundSource {
     }
 
     var requiresNetwork: Bool { true }
-    var needsBackupTone: Bool { false }
+    /// 스크립트가 `play`만 보내므로 음악 앱의 큐가 비어 있으면 오류 없이 무음이 된다.
+    /// 재생 성공을 검증할 수 없는 소스이므로 백업음을 함께 재생한다 (설계 문서 §7.4).
+    var needsBackupTone: Bool { true }
 
     init(id: String) {
         self.id = id

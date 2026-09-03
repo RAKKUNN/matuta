@@ -5,7 +5,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-CONFIG="${1:-debug}"
+CONFIG="${1:-release}"
 swift build -c "$CONFIG" --product Matuta
 
 BIN="$(swift build -c "$CONFIG" --product Matuta --show-bin-path)/Matuta"
@@ -23,7 +23,8 @@ if [ -f "Resources/logo.png" ]; then
     cp Resources/logo.png "$APP/Contents/Resources/logo.png"
 fi
 
-# 로컬 실행용 임시 서명. 배포용 Developer ID 서명은 나중 단계에서 다룬다.
-codesign --force --sign - "$APP"
+# 로컬 실행용 임시 서명. 배포판은 Scripts/release.sh 가 Developer ID로 서명한다.
+# 엔타이틀먼트를 함께 넣어 로컬 동작이 배포판과 같아지게 한다.
+codesign --force --entitlements Resources/Matuta.entitlements --sign - "$APP"
 
 echo "빌드 완료: $APP"

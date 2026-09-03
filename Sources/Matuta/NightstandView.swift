@@ -194,6 +194,8 @@ struct NightstandView: View {
             engine.switchToBuiltInSpeaker()
         case .muted, .lowVolume:
             engine.setVolumeToSafeLevel(0.7)
+        case .automationDenied:
+            engine.resolveAutomation(for: nextAlarm)
         case .wakeNotScheduled:
             break
         }

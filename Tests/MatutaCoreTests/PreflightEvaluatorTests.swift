@@ -107,3 +107,71 @@ func testPreflightMutedBadgeIsWarning() {
     #expect(report.primaryWarning?.kind == .muted)
 }
 
+
+// MARK: - 외부 앱 자동화 권한 (Spotify / 음악)
+
+@Test("자동화가 필요 없는 소스는 경고를 만들지 않는다")
+func automationNotRequiredProducesNoWarning() {
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: Alarm(hour: 7, minute: 0),
+        automation: .notRequired
+    )
+    #expect(report.warnings.contains { $0.kind == .automationDenied } == false)
+    #expect(report.isSafe)
+}
+
+@Test("자동화 권한이 거부되면 경고를 만들고 안전 판정을 깬다")
+func automationDeniedProducesWarning() {
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: Alarm(hour: 7, minute: 0),
+        automation: AutomationSnapshot(targetName: "Spotify", status: .denied)
+    )
+    let warning = report.warnings.first { $0.kind == .automationDenied }
+    #expect(warning?.severity == .warning)
+    #expect(warning?.message.contains("Spotify") == true)
+    #expect(report.isSafe == false)
+}
+
+@Test("권한을 아직 묻지 않은 상태는 허용 요청 액션을 제공한다")
+func automationNotDeterminedOffersAction() {
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: Alarm(hour: 7, minute: 0),
+        automation: AutomationSnapshot(targetName: "음악", status: .notDetermined)
+    )
+    let warning = report.warnings.first { $0.kind == .automationDenied }
+    #expect(warning?.actionLabel != nil)
+}
+
+@Test("대상 앱이 설치되어 있지 않으면 권한 요청이 아니라 설치 안내를 한다")
+func automationAppNotInstalledHasNoAction() {
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: Alarm(hour: 7, minute: 0),
+        automation: AutomationSnapshot(targetName: "Spotify", status: .appNotInstalled)
+    )
+    let warning = report.warnings.first { $0.kind == .automationDenied }
+    #expect(warning != nil)
+    // 설치가 안 된 건 앱이 대신 고쳐줄 수 없다 — 누를 수 있는 액션을 주면 안 된다.
+    #expect(warning?.actionLabel == nil)
+}
+
+@Test("권한을 판별할 수 없는 상태(대상 앱 미실행)는 경고하지 않는다")
+func automationUnknownProducesNoWarning() {
+    // AEDeterminePermissionToAutomateTarget은 대상 앱이 꺼져 있으면 -600을 준다.
+    // 잠들기 전에는 정상 상황이므로 경고하면 매일 밤 헛경고가 된다.
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: Alarm(hour: 7, minute: 0),
+        automation: AutomationSnapshot(targetName: "Spotify", status: .unknown)
+    )
+    #expect(report.warnings.contains { $0.kind == .automationDenied } == false)
+    #expect(report.isSafe)
+}

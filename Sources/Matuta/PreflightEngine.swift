@@ -19,11 +19,14 @@ public final class PreflightEngine {
     public func evaluate(alarm: Alarm?, isSleepPrevented: Bool = false) -> PreflightReport {
         let snapshot = audioGuard.captureSnapshot()
         let isWakeArmed = wakeScheduler.isWakeScheduled
+        let automation = alarm.map { AutomationPermission.snapshot(for: $0.source) }
+            ?? .notRequired
         return PreflightEvaluator.evaluate(
             audio: snapshot,
             wakeScheduled: isWakeArmed,
             isSleepPrevented: isSleepPrevented,
-            alarm: alarm
+            alarm: alarm,
+            automation: automation
         )
     }
 
@@ -33,5 +36,11 @@ public final class PreflightEngine {
 
     public func setVolumeToSafeLevel(_ volume: Float = 0.7) {
         audioGuard.setVolumeToSafeLevel(volume)
+    }
+
+    /// 자동화 권한 경고를 눌렀을 때: 미결정이면 권한 요청, 거부 상태면 시스템 설정을 연다.
+    public func resolveAutomation(for alarm: Alarm?) {
+        guard let alarm else { return }
+        AutomationPermission.resolve(for: alarm.source)
     }
 }
