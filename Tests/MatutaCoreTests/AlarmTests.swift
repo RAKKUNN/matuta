@@ -9,7 +9,7 @@ func alarmDefaults() {
     #expect(alarm.hour == 7)
     #expect(alarm.minute == 0)
     #expect(alarm.weekdays.isEmpty)
-    #expect(alarm.source == .builtIn(name: "Radar"))
+    #expect(alarm.source == .builtIn(name: BuiltInTone.default.rawValue))
     #expect(alarm.volume == 0.7)
     #expect(alarm.fadeIn == true)
     #expect(alarm.snoozeMinutes == 9)

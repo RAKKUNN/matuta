@@ -1,6 +1,7 @@
 import Foundation
 
-public protocol PowerManagement: Sendable {
+/// IOKit 전원 관리 및 절전 깨우기 스케줄링 프로토콜
+public protocol WakeScheduler: Sendable {
     /// 다음 알람 시각에 맞춰 Mac 절전 자동 깨우기를 예약한다.
     @discardableResult
     func scheduleWake(at date: Date) -> Bool
@@ -14,3 +15,6 @@ public protocol PowerManagement: Sendable {
     /// 획득한 절전 방지 assertion을 해제한다.
     func releaseSleepAssertion()
 }
+
+/// 레거시 호환용 타입별칭
+public typealias PowerManagement = WakeScheduler

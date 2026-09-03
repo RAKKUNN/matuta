@@ -21,7 +21,7 @@ public struct Alarm: Codable, Identifiable, Equatable, Sendable {
         minute: Int,
         weekdays: Set<Weekday> = [],
         label: String? = nil,
-        source: SoundSourceRef = .builtIn(name: "Radar"),
+        source: SoundSourceRef = .builtIn(name: BuiltInTone.default.rawValue),
         volume: Double = 0.7,
         fadeIn: Bool = true,
         snoozeMinutes: Int? = 9,

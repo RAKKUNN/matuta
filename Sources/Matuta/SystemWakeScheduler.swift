@@ -8,7 +8,7 @@ import MatutaCore
 /// 설계 문서 §6.1 & §9:
 /// - 알람 2분 전 Mac을 절전 모드에서 자동 깨움 (`IOPMSchedulePowerEvent`)
 /// - 알람 발화 중 화면 및 시스템이 꺼지지 않도록 방지 (`IOPMAssertion`)
-public final class SystemPowerMatuta: PowerManagement, @unchecked Sendable {
+public final class SystemWakeScheduler: WakeScheduler, @unchecked Sendable {
     private let appName = "com.matuta.app" as CFString
     private let wakeType = "wake" as CFString
 
@@ -30,7 +30,6 @@ public final class SystemPowerMatuta: PowerManagement, @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        // 기존 예약 취소
         cancelWakeInternal()
 
         // 알람 2분 전에 깨운다 (알람이 2분 이내면 알람 시각에 깨움)
@@ -103,3 +102,6 @@ public final class SystemPowerMatuta: PowerManagement, @unchecked Sendable {
         releaseSleepAssertion()
     }
 }
+
+/// 레거시 호환용 타입별칭
+public typealias SystemPowerMatuta = SystemWakeScheduler

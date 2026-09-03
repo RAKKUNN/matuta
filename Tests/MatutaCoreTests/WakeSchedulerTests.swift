@@ -2,7 +2,7 @@ import Testing
 import Foundation
 @testable import MatutaCore
 
-final class MockPowerManager: PowerManagement, @unchecked Sendable {
+final class MockWakeScheduler: WakeScheduler, @unchecked Sendable {
     var scheduledDate: Date?
     var isAssertionActive: Bool = false
     var assertionReason: String?
@@ -29,7 +29,7 @@ final class MockPowerManager: PowerManagement, @unchecked Sendable {
 
 @Test("알람 2분 전에 전원 깨우기 이벤트를 계산하여 예약한다")
 func testPowerWakeCalculation() {
-    let power = MockPowerManager()
+    let power = MockWakeScheduler()
     let alarmTime = Date().addingTimeInterval(3600) // 1시간 뒤
 
     let result = power.scheduleWake(at: alarmTime)
@@ -40,7 +40,7 @@ func testPowerWakeCalculation() {
 
 @Test("알람 발화 시 화면 절전 방지 assertion을 획득하고 해제 시 해제한다")
 func testSleepAssertionCycle() {
-    let power = MockPowerManager()
+    let power = MockWakeScheduler()
 
     power.acquireSleepAssertion(reason: "알람 울림")
     #expect(power.isAssertionActive == true)
