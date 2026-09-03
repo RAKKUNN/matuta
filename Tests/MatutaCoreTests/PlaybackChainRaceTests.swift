@@ -12,7 +12,7 @@ private final class SlowAsyncMockSource: SoundSource {
     var playDelayNanoseconds: UInt64
 
     init(displayName: String, needsBackupTone: Bool = false, playDelayNanoseconds: UInt64 = 50_000_000) {
-        self.sourceRef = .builtIn(name: displayName)
+        self.sourceRef = .builtIn(.default)
         self.displayName = displayName
         self.requiresNetwork = false
         self.needsBackupTone = needsBackupTone

@@ -15,6 +15,3 @@ public protocol WakeScheduler: Sendable {
     /// 획득한 절전 방지 assertion을 해제한다.
     func releaseSleepAssertion()
 }
-
-/// 레거시 호환용 타입별칭
-public typealias PowerManagement = WakeScheduler

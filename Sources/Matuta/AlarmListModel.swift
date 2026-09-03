@@ -22,7 +22,7 @@ final class AlarmListModel {
     private let tonePlayer: TonePlayer
     private let playbackChain: PlaybackChain
     private let overlay: AlarmOverlayController
-    private let powerManager: SystemPowerMatuta
+    private let wakeScheduler: SystemWakeScheduler
     private let audioGuard: AudioGuard
     private let nightstand: NightstandController
     private let preflightEngine: PreflightEngine
@@ -35,7 +35,7 @@ final class AlarmListModel {
         tonePlayer: TonePlayer = TonePlayer(),
         playbackChain: PlaybackChain = PlaybackChain(),
         overlay: AlarmOverlayController = AlarmOverlayController(),
-        powerManager: SystemPowerMatuta = SystemPowerMatuta(),
+        wakeScheduler: SystemWakeScheduler = SystemWakeScheduler(),
         audioGuard: AudioGuard = AudioGuard(),
         nightstand: NightstandController = NightstandController()
     ) {
@@ -43,10 +43,10 @@ final class AlarmListModel {
         self.tonePlayer = tonePlayer
         self.playbackChain = playbackChain
         self.overlay = overlay
-        self.powerManager = powerManager
+        self.wakeScheduler = wakeScheduler
         self.audioGuard = audioGuard
         self.nightstand = nightstand
-        self.preflightEngine = PreflightEngine(audioGuard: audioGuard, powerManager: powerManager)
+        self.preflightEngine = PreflightEngine(audioGuard: audioGuard, wakeScheduler: wakeScheduler)
 
         let payload = store.loadPayload()
         let loadedAlarms = payload.alarms
@@ -102,7 +102,7 @@ final class AlarmListModel {
     }
 
     func addAlarm() {
-        editing = Alarm(hour: 7, minute: 0, source: .builtIn(name: "Morning Harp"))
+        editing = Alarm(hour: 7, minute: 0, source: .builtIn(.default))
     }
 
     func save(_ alarm: Alarm) {
@@ -134,7 +134,7 @@ final class AlarmListModel {
         fireTask = nil
         playbackChain.stop()
         audioGuard.restore()
-        powerManager.releaseSleepAssertion()
+        wakeScheduler.releaseSleepAssertion()
         overlay.hide()
 
         if let alarm = firing, alarm.weekdays.isEmpty {
@@ -153,7 +153,7 @@ final class AlarmListModel {
         fireTask = nil
         playbackChain.stop()
         audioGuard.restore()
-        powerManager.releaseSleepAssertion()
+        wakeScheduler.releaseSleepAssertion()
         overlay.hide()
         firing = nil
 
@@ -195,7 +195,7 @@ final class AlarmListModel {
         snoozeTimer = nil
 
         // 1. 화면/시스템 절전 방지 활성화
-        powerManager.acquireSleepAssertion(reason: "Matuta Alarm Firing")
+        wakeScheduler.acquireSleepAssertion(reason: "Matuta Alarm Firing")
 
         // 2. AudioGuard: 내장 스피커 강제 라우팅, 뮤트 해제, 볼륨 확보
         audioGuard.protect(targetVolume: Float(alarm.volume))
@@ -232,9 +232,9 @@ final class AlarmListModel {
         scheduler?.update(alarms: alarms, snooze: snoozeState)
 
         if let next = scheduler?.nextFire?.date {
-            powerManager.scheduleWake(at: next)
+            wakeScheduler.scheduleWake(at: next)
         } else {
-            powerManager.cancelWake()
+            wakeScheduler.cancelWake()
         }
     }
 }

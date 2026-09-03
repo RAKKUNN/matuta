@@ -14,7 +14,7 @@ public enum OmniboxParser {
     public static func parse(text: String) -> SoundSourceRef {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            return .builtIn(name: "Radar")
+            return .builtIn(.default)
         }
 
         // 1. Spotify URI (e.g. spotify:track:..., spotify:playlist:...)
@@ -69,7 +69,10 @@ public enum OmniboxParser {
         }
 
         // 4. Default: Built-in Sound
-        return .builtIn(name: trimmed)
+        let matchedTone = BuiltInTone.allCases.first {
+            $0.rawValue.localizedCaseInsensitiveCompare(trimmed) == .orderedSame
+        }
+        return .builtIn(matchedTone ?? .default)
     }
 
     public static func makeLocalFileRef(for url: URL) -> SoundSourceRef {

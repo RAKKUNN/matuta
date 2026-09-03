@@ -206,7 +206,7 @@ struct AlarmListView: View {
             minute: minute,
             weekdays: [],
             label: label,
-            source: .builtIn(name: "Morning Harp"),
+            source: .builtIn(.default),
             volume: 0.8,
             fadeIn: true,
             snoozeMinutes: 9,
@@ -469,8 +469,8 @@ private struct ArtisanAlarmCard: View {
 
     private var sourceName: String {
         switch alarm.source {
-        case .builtIn(let name):
-            return name
+        case .builtIn(let tone):
+            return tone.rawValue
         case .localFile(let bookmark):
             if let url = LocalFileSource.resolve(bookmark: bookmark) {
                 return url.lastPathComponent

@@ -60,5 +60,8 @@ func parseLocalFilePath() {
 func parsePlainTextBuiltIn() {
     let input = "Radar"
     let source = OmniboxParser.parse(text: input)
-    #expect(source == .builtIn(name: "Radar"))
+    #expect(source == .builtIn(.radar))
+
+    let empty = OmniboxParser.parse(text: "")
+    #expect(empty == .builtIn(.default))
 }

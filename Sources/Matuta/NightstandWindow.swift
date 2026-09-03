@@ -9,8 +9,7 @@ final class NightstandWindow: NSWindow {
     override var canBecomeMain: Bool { true }
 
     override func keyDown(with event: NSEvent) {
-        // 53 = ESC 키
-        if event.keyCode == 53 {
+        if event.keyCode == 53 { // ESC
             onDismiss?()
         } else {
             super.keyDown(with: event)
@@ -21,7 +20,7 @@ final class NightstandWindow: NSWindow {
 @MainActor
 final class NightstandController {
     private var window: NightstandWindow?
-    private let powerMatuta = SystemPowerMatuta()
+    private let wakeScheduler = SystemWakeScheduler()
 
     func show(nextFireDate: Date?, nextAlarm: Alarm?) {
         hide()
@@ -61,11 +60,11 @@ final class NightstandController {
         self.window = win
 
         // 나이트스탠드 켜져 있는 동안 화면 켜짐 유지
-        powerMatuta.acquireSleepAssertion(reason: "Matuta Nightstand Active")
+        wakeScheduler.acquireSleepAssertion(reason: "Matuta Nightstand Active")
     }
 
     func hide() {
-        powerMatuta.releaseSleepAssertion()
+        wakeScheduler.releaseSleepAssertion()
         window?.orderOut(nil)
         window = nil
     }

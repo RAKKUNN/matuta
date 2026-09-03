@@ -4,19 +4,19 @@ import MatutaCore
 @MainActor
 final class BuiltInSource: SoundSource {
     let sourceRef: SoundSourceRef
-    let name: String
+    let tone: BuiltInTone
     private let player: TonePlayer
 
     var displayName: String {
-        "🔔 \(name)"
+        "🔔 \(tone.rawValue)"
     }
 
     var requiresNetwork: Bool { false }
     var needsBackupTone: Bool { false }
 
-    init(name: String = "Radar", player: TonePlayer = TonePlayer()) {
-        self.name = name
-        self.sourceRef = .builtIn(name: name)
+    init(tone: BuiltInTone = .default, player: TonePlayer = TonePlayer()) {
+        self.tone = tone
+        self.sourceRef = .builtIn(tone)
         self.player = player
     }
 
@@ -25,7 +25,7 @@ final class BuiltInSource: SoundSource {
     }
 
     func play(volume: Double, fadeIn: Bool) async throws {
-        let pattern = TonePattern.pattern(named: name)
+        let pattern = TonePattern.pattern(for: tone)
         player.start(pattern: pattern, volume: volume, fadeIn: fadeIn)
     }
 

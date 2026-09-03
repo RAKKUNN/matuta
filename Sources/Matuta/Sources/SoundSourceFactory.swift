@@ -5,8 +5,8 @@ import MatutaCore
 enum SoundSourceFactory {
     static func makeSource(for ref: SoundSourceRef, tonePlayer: TonePlayer = TonePlayer()) -> SoundSource {
         switch ref {
-        case .builtIn(let name):
-            return BuiltInSource(name: name, player: tonePlayer)
+        case .builtIn(let tone):
+            return BuiltInSource(tone: tone, player: tonePlayer)
         case .localFile(let bookmark):
             return LocalFileSource(bookmark: bookmark)
         case .streamURL(let url):
@@ -21,6 +21,6 @@ enum SoundSourceFactory {
     }
 
     static func backupSource(tonePlayer: TonePlayer = TonePlayer()) -> SoundSource {
-        return BuiltInSource(name: "Radar", player: tonePlayer)
+        return BuiltInSource(tone: .radar, player: tonePlayer)
     }
 }

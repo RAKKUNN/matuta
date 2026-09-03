@@ -191,7 +191,7 @@ struct AlarmOverlayView: View {
 
     private var defaultSourceText: String {
         switch alarm.source {
-        case .builtIn(let name): name
+        case .builtIn(let tone): tone.rawValue
         case .localFile: "음악 파일"
         case .streamURL(let url): url.host ?? "라디오"
         case .appleMusic: "Apple Music"

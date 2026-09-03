@@ -36,7 +36,7 @@ public struct AlarmStore: Sendable {
                 minute: 0,
                 weekdays: [.monday, .tuesday, .wednesday, .thursday, .friday],
                 label: "상쾌한 아침",
-                source: .builtIn(name: "Morning Harp"),
+                source: .builtIn(.default),
                 volume: 0.8,
                 fadeIn: true,
                 isEnabled: false

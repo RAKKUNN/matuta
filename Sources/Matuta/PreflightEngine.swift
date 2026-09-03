@@ -9,16 +9,16 @@ import MatutaCore
 @MainActor
 public final class PreflightEngine {
     private let audioGuard: AudioGuard
-    private let powerManager: SystemPowerMatuta
+    private let wakeScheduler: SystemWakeScheduler
 
-    public init(audioGuard: AudioGuard = AudioGuard(), powerManager: SystemPowerMatuta = SystemPowerMatuta()) {
+    public init(audioGuard: AudioGuard = AudioGuard(), wakeScheduler: SystemWakeScheduler = SystemWakeScheduler()) {
         self.audioGuard = audioGuard
-        self.powerManager = powerManager
+        self.wakeScheduler = wakeScheduler
     }
 
     public func evaluate(alarm: Alarm?) async -> PreflightReport {
         let snapshot = audioGuard.captureSnapshot()
-        let isWakeArmed = powerManager.isWakeScheduled
+        let isWakeArmed = wakeScheduler.isWakeScheduled
         return PreflightEvaluator.evaluate(
             audio: snapshot,
             wakeScheduled: isWakeArmed,

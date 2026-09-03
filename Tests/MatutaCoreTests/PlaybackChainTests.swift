@@ -46,8 +46,8 @@ private final class MockSource: SoundSource {
 @Test("정상 소스는 주 소스만 단독으로 재생된다")
 func normalSourcePlaysAlone() async {
     let chain = PlaybackChain()
-    let primary = MockSource(sourceRef: .builtIn(name: "Radar"), displayName: "Radar")
-    let backup = MockSource(sourceRef: .builtIn(name: "Radar"), displayName: "Radar")
+    let primary = MockSource(sourceRef: .builtIn(.radar), displayName: "Radar")
+    let backup = MockSource(sourceRef: .builtIn(.radar), displayName: "Radar")
 
     await chain.start(primary: primary, backup: backup, volume: 0.8, fadeIn: false)
 
@@ -62,7 +62,7 @@ func normalSourcePlaysAlone() async {
 func failingSourceFallsBackToBackup() async {
     let chain = PlaybackChain()
     let primary = MockSource(sourceRef: .streamURL(URL(string: "https://invalid.url")!), displayName: "스트림", shouldThrow: true)
-    let backup = MockSource(sourceRef: .builtIn(name: "Radar"), displayName: "Radar")
+    let backup = MockSource(sourceRef: .builtIn(.radar), displayName: "Radar")
 
     await chain.start(primary: primary, backup: backup, volume: 0.7, fadeIn: true)
 
@@ -78,7 +78,7 @@ func failingSourceFallsBackToBackup() async {
 func unverifiableSourcePlaysConcurrentlyWithBackup() async {
     let chain = PlaybackChain()
     let primary = MockSource(sourceRef: .spotify(uri: "spotify:track:123"), displayName: "Spotify", needsBackupTone: true)
-    let backup = MockSource(sourceRef: .builtIn(name: "Radar"), displayName: "Radar")
+    let backup = MockSource(sourceRef: .builtIn(.radar), displayName: "Radar")
 
     await chain.start(primary: primary, backup: backup, volume: 0.9, fadeIn: false)
 
@@ -92,7 +92,7 @@ func unverifiableSourcePlaysConcurrentlyWithBackup() async {
 func stopTerminatesAllSources() async {
     let chain = PlaybackChain()
     let primary = MockSource(sourceRef: .spotify(uri: "spotify:track:123"), displayName: "Spotify", needsBackupTone: true)
-    let backup = MockSource(sourceRef: .builtIn(name: "Radar"), displayName: "Radar")
+    let backup = MockSource(sourceRef: .builtIn(.radar), displayName: "Radar")
 
     await chain.start(primary: primary, backup: backup, volume: 0.9, fadeIn: false)
     chain.stop()

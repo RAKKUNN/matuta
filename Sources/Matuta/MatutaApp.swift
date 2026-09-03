@@ -196,7 +196,7 @@ private struct MenuBarPopoverView: View {
                 minute: m,
                 weekdays: [],
                 label: label,
-                source: .builtIn(name: "Morning Harp"),
+                source: .builtIn(.default),
                 volume: 0.8,
                 fadeIn: true,
                 snoozeMinutes: 9,

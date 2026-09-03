@@ -102,6 +102,3 @@ public final class SystemWakeScheduler: WakeScheduler, @unchecked Sendable {
         releaseSleepAssertion()
     }
 }
-
-/// 레거시 호환용 타입별칭
-public typealias SystemPowerMatuta = SystemWakeScheduler

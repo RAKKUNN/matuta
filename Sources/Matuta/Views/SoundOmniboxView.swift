@@ -120,8 +120,8 @@ struct SoundOmniboxView: View {
 
             Spacer()
 
-            if case .builtIn(let name) = soundRef {
-                Button(action: { toggleBuiltInPreview(name: name) }) {
+            if case .builtIn(let tone) = soundRef {
+                Button(action: { toggleBuiltInPreview(tone: tone) }) {
                     HStack(spacing: 4) {
                         Image(systemName: isPreviewing ? "stop.fill" : "play.fill")
                             .font(.system(size: 9))
@@ -146,8 +146,8 @@ struct SoundOmniboxView: View {
 
     private var recommendedChipsSection: some View {
         HStack(spacing: 6) {
-            presetChip("Morning Harp", source: .builtIn(name: "Morning Harp"), icon: "bell.fill")
-            presetChip("Warm Rhodes", source: .builtIn(name: "Warm Rhodes"), icon: "bell.fill")
+            presetChip("Morning Harp", source: .builtIn(.morningHarp), icon: "bell.fill")
+            presetChip("Warm Rhodes", source: .builtIn(.warmRhodes), icon: "bell.fill")
             presetChip("Lofi Girl (웹)", source: .web(URL(string: "https://www.youtube.com/watch?v=jfKfPfyJRdk")!), icon: "play.rectangle.fill")
             presetChip("Spotify Top 50", source: .spotify(uri: "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"), icon: "waveform")
         }
@@ -185,16 +185,16 @@ struct SoundOmniboxView: View {
 
                 Picker("", selection: Binding(
                     get: {
-                        if case .builtIn(let name) = soundRef { return name }
-                        return "Morning Harp"
+                        if case .builtIn(let tone) = soundRef { return tone }
+                        return .default
                     },
-                    set: { newName in
-                        self.soundRef = .builtIn(name: newName)
+                    set: { newTone in
+                        self.soundRef = .builtIn(newTone)
                         self.omniboxText = ""
                     }
                 )) {
-                    ForEach(TonePattern.allBuiltInNames, id: \.self) { name in
-                        Text(name).tag(name)
+                    ForEach(BuiltInTone.allCases, id: \.self) { tone in
+                        Text(tone.rawValue).tag(tone)
                     }
                 }
                 .pickerStyle(.menu)
@@ -255,8 +255,8 @@ struct SoundOmniboxView: View {
 
     private var sourceDetailTitle: String {
         switch soundRef {
-        case .builtIn(let name):
-            return name
+        case .builtIn(let tone):
+            return tone.rawValue
         case .localFile(let bookmark):
             if let url = LocalFileSource.resolve(bookmark: bookmark) {
                 return url.lastPathComponent
@@ -273,12 +273,12 @@ struct SoundOmniboxView: View {
         }
     }
 
-    private func toggleBuiltInPreview(name: String) {
+    private func toggleBuiltInPreview(tone: BuiltInTone) {
         if isPreviewing {
             stopPreview()
         } else {
             isPreviewing = true
-            let pattern = TonePattern.pattern(named: name)
+            let pattern = TonePattern.pattern(for: tone)
             previewPlayer.start(pattern: pattern, volume: 0.8, fadeIn: false)
         }
     }
