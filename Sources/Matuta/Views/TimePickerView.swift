@@ -8,10 +8,11 @@ struct TimePickerView: View {
     @Binding var isPM: Bool
     let theme: CozyTheme
 
-    @State private var focusedField: TimeFieldFocus = .hour
-    @State private var fieldRegistry = TimePickerFieldRegistry()
+    @FocusState private var focusedField: TimeFieldFocus?
+    @State private var hourBuffer = TimeInputBuffer()
+    @State private var minuteBuffer = TimeInputBuffer()
 
-    enum TimeFieldFocus {
+    enum TimeFieldFocus: Hashable {
         case hour
         case minute
     }
@@ -21,14 +22,15 @@ struct TimePickerView: View {
             HStack(spacing: 14) {
                 // 시/분 디지털 박스
                 HStack(spacing: 8) {
-                    // 시(Hour) 블록 (스크롤 + 숫자 키보드 입력 + 화살표 키 + 클릭 증감)
+                    // 시(Hour) 블록
                     timeUnitBlock(
-                        value: $hour12,
-                        isHour: true,
-                        isFocused: focusedField == .hour,
-                        onFocus: { focusedField = .hour },
+                        value: hour12,
+                        field: .hour,
                         onStep: { incrementHour($0) },
-                        onAdvance: { fieldRegistry.focusMinute() }
+                        onSelect: {
+                            focusedField = .hour
+                            hourBuffer.reset()
+                        }
                     )
 
                     Text(":")
@@ -36,14 +38,15 @@ struct TimePickerView: View {
                         .foregroundStyle(theme.textSecondary.opacity(0.6))
                         .offset(y: -2)
 
-                    // 분(Minute) 블록 (스크롤 + 숫자 키보드 입력 + 화살표 키 + 클릭 증감)
+                    // 분(Minute) 블록
                     timeUnitBlock(
-                        value: $minute,
-                        isHour: false,
-                        isFocused: focusedField == .minute,
-                        onFocus: { focusedField = .minute },
+                        value: minute,
+                        field: .minute,
                         onStep: { incrementMinute($0) },
-                        onAdvance: { fieldRegistry.clearFocus() }
+                        onSelect: {
+                            focusedField = .minute
+                            minuteBuffer.reset()
+                        }
                     )
                 }
                 .padding(8)
@@ -98,14 +101,14 @@ struct TimePickerView: View {
     }
 
     private func timeUnitBlock(
-        value: Binding<Int>,
-        isHour: Bool,
-        isFocused: Bool,
-        onFocus: @escaping () -> Void,
+        value: Int,
+        field: TimeFieldFocus,
         onStep: @escaping (Int) -> Void,
-        onAdvance: @escaping () -> Void
+        onSelect: @escaping () -> Void
     ) -> some View {
-        VStack(spacing: 2) {
+        let isFocused = focusedField == field
+
+        return VStack(spacing: 2) {
             Button(action: { onStep(1) }) {
                 Image(systemName: "chevron.up")
                     .font(.system(size: 10, weight: .bold))
@@ -114,18 +117,42 @@ struct TimePickerView: View {
             }
             .buttonStyle(.plain)
 
-            TimeDigitFieldRepresentable(
-                value: value,
-                isHour: isHour,
-                textColor: isFocused ? (theme.isLight ? NSColor(theme.accent) : NSColor.white) : NSColor(theme.textSecondary),
-                registry: fieldRegistry,
-                onFocus: onFocus,
-                onStep: onStep,
-                onAdvance: onAdvance
-            )
-            .frame(width: 64, height: 48)
-            .background(isFocused ? theme.accent.opacity(0.12) : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            // 숫자 디스플레이 (커서 없는 직관적인 타임피스 인터랙션)
+            ZStack {
+                Text(TimePickerLogic.formatTwoDigits(value))
+                    .font(.system(size: 44, weight: .light, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(isFocused ? (theme.isLight ? theme.accent : Color.white) : theme.textSecondary)
+                    .frame(width: 64, height: 48)
+                    .background(isFocused ? theme.accent.opacity(0.15) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(isFocused ? theme.accent.opacity(0.4) : Color.clear, lineWidth: 1.5)
+                    )
+
+                // 스크롤 휠 및 클릭 이벤트 가로채기 (실시간 즉각 반영)
+                ScrollClickOverlay(
+                    onScroll: onStep,
+                    onClick: onSelect
+                )
+                .frame(width: 64, height: 48)
+            }
+            .focusable()
+            .focused($focusedField, equals: field)
+            .onKeyPress(characters: .decimalDigits) { press in
+                guard let char = press.characters.first else { return .ignored }
+                handleDigitPress(char, for: field)
+                return .handled
+            }
+            .onKeyPress(.upArrow) {
+                onStep(1)
+                return .handled
+            }
+            .onKeyPress(.downArrow) {
+                onStep(-1)
+                return .handled
+            }
 
             Button(action: { onStep(-1) }) {
                 Image(systemName: "chevron.down")
@@ -135,9 +162,27 @@ struct TimePickerView: View {
             }
             .buttonStyle(.plain)
         }
-        .background(
-            ScrollWheelArea(onStep: onStep)
-        )
+    }
+
+    private func handleDigitPress(_ char: Character, for field: TimeFieldFocus) {
+        withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+            switch field {
+            case .hour:
+                let result = hourBuffer.appendHourDigit(char, currentHour: hour12)
+                hour12 = result.newHour
+                if result.advance {
+                    focusedField = .minute
+                    minuteBuffer.reset()
+                }
+            case .minute:
+                let result = minuteBuffer.appendMinuteDigit(char, currentMinute: minute)
+                minute = result.newMinute
+                if result.advance {
+                    // 분까지 2자리 입력 완료 시 포커스 해제
+                    focusedField = nil
+                }
+            }
+        }
     }
 
     private func incrementHour(_ delta: Int) {
@@ -173,208 +218,33 @@ struct TimePickerView: View {
     }
 }
 
-// MARK: - AppKit Time Digit Input & Scroll Handling
+// MARK: - AppKit Scroll Wheel & Click Overlay (실시간 즉각 반응)
 
-@MainActor
-final class TimePickerFieldRegistry {
-    weak var hourField: TimeDigitNSTextField?
-    weak var minuteField: TimeDigitNSTextField?
+struct ScrollClickOverlay: NSViewRepresentable {
+    let onScroll: (Int) -> Void
+    let onClick: () -> Void
 
-    func focusMinute() {
-        if let mf = minuteField, let window = mf.window {
-            window.makeFirstResponder(mf)
-        }
-    }
-
-    func clearFocus() {
-        if let hf = hourField, let window = hf.window {
-            window.makeFirstResponder(nil)
-        }
-    }
-}
-
-struct TimeDigitFieldRepresentable: NSViewRepresentable {
-    @Binding var value: Int
-    let isHour: Bool
-    let textColor: NSColor
-    let registry: TimePickerFieldRegistry
-    let onFocus: () -> Void
-    let onStep: (Int) -> Void
-    let onAdvance: () -> Void
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    func makeNSView(context: Context) -> TimeDigitNSTextField {
-        let tf = TimeDigitNSTextField()
-        tf.delegate = context.coordinator
-        tf.isHour = isHour
-        tf.onStep = onStep
-        tf.onAdvance = onAdvance
-        tf.onFocus = onFocus
-        tf.font = NSFont.monospacedDigitSystemFont(ofSize: 42, weight: .light)
-        tf.alignment = .center
-        tf.isBordered = false
-        tf.drawsBackground = false
-        tf.focusRingType = .none
-        tf.textColor = textColor
-        tf.stringValue = TimePickerLogic.formatTwoDigits(value)
-
-        if isHour {
-            registry.hourField = tf
-        } else {
-            registry.minuteField = tf
-        }
-
-        return tf
-    }
-
-    func updateNSView(_ nsView: TimeDigitNSTextField, context: Context) {
-        context.coordinator.parent = self
-        nsView.isHour = isHour
-        nsView.textColor = textColor
-        nsView.onStep = onStep
-        nsView.onAdvance = onAdvance
-        nsView.onFocus = onFocus
-
-        // 활성 커서 입력 중이 아닐 때만 외부 상태 변경 반영
-        if nsView.currentEditor() == nil {
-            let formatted = TimePickerLogic.formatTwoDigits(value)
-            if nsView.stringValue != formatted {
-                nsView.stringValue = formatted
-            }
-        }
-    }
-
-    final class Coordinator: NSObject, NSTextFieldDelegate {
-        var parent: TimeDigitFieldRepresentable
-
-        init(_ parent: TimeDigitFieldRepresentable) {
-            self.parent = parent
-        }
-
-        func controlTextDidBeginEditing(_ obj: Notification) {
-            parent.onFocus()
-        }
-
-        func controlTextDidChange(_ obj: Notification) {
-            guard let tf = obj.object as? NSTextField else { return }
-            let text = tf.stringValue
-
-            if parent.isHour {
-                if let parsed = TimePickerLogic.parseHourInput(text) {
-                    parent.value = parsed.value
-                    if parsed.shouldAdvance {
-                        parent.onAdvance()
-                    }
-                }
-            } else {
-                if let parsed = TimePickerLogic.parseMinuteInput(text) {
-                    parent.value = parsed.value
-                    if parsed.shouldAdvance {
-                        parent.onAdvance()
-                    }
-                }
-            }
-        }
-
-        func controlTextDidEndEditing(_ obj: Notification) {
-            guard let tf = obj.object as? NSTextField else { return }
-            tf.stringValue = TimePickerLogic.formatTwoDigits(parent.value)
-        }
-    }
-}
-
-final class TimeDigitNSTextField: NSTextField {
-    var isHour: Bool = false
-    var onStep: ((Int) -> Void)?
-    var onAdvance: (() -> Void)?
-    var onFocus: (() -> Void)?
-
-    private var scrollAccumulator: CGFloat = 0
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func becomeFirstResponder() -> Bool {
-        let success = super.becomeFirstResponder()
-        if success {
-            onFocus?()
-            DispatchQueue.main.async { [weak self] in
-                self?.selectText(nil)
-            }
-        }
-        return success
-    }
-
-    override func scrollWheel(with event: NSEvent) {
-        let delta = event.scrollingDeltaY
-        if event.hasPreciseScrollingDeltas {
-            scrollAccumulator += delta
-            let threshold: CGFloat = 8.0
-            if scrollAccumulator >= threshold {
-                onStep?(1)
-                scrollAccumulator = 0
-            } else if scrollAccumulator <= -threshold {
-                onStep?(-1)
-                scrollAccumulator = 0
-            }
-        } else {
-            if delta > 0 {
-                onStep?(1)
-            } else if delta < 0 {
-                onStep?(-1)
-            }
-        }
-        if event.phase == .ended || event.phase == .cancelled {
-            scrollAccumulator = 0
-        }
-    }
-
-    override func keyDown(with event: NSEvent) {
-        // 위쪽 화살표 키: 126
-        if event.keyCode == 126 {
-            onStep?(1)
-            return
-        }
-        // 아래쪽 화살표 키: 125
-        if event.keyCode == 125 {
-            onStep?(-1)
-            return
-        }
-        // Tab 키: 48
-        if event.keyCode == 48 {
-            onAdvance?()
-            return
-        }
-        // Return / Enter 키: 36
-        if event.keyCode == 36 {
-            window?.makeFirstResponder(nil)
-            return
-        }
-        super.keyDown(with: event)
-    }
-}
-
-// MARK: - Unit Block Scroll Wheel Area
-
-struct ScrollWheelArea: NSViewRepresentable {
-    let onStep: (Int) -> Void
-
-    func makeNSView(context: Context) -> ScrollWheelNSView {
-        let v = ScrollWheelNSView()
-        v.onStep = onStep
+    func makeNSView(context: Context) -> ScrollClickNSView {
+        let v = ScrollClickNSView()
+        v.onScroll = onScroll
+        v.onClick = onClick
         return v
     }
 
-    func updateNSView(_ nsView: ScrollWheelNSView, context: Context) {
-        nsView.onStep = onStep
+    func updateNSView(_ nsView: ScrollClickNSView, context: Context) {
+        nsView.onScroll = onScroll
+        nsView.onClick = onClick
     }
 }
 
-final class ScrollWheelNSView: NSView {
-    var onStep: ((Int) -> Void)?
+final class ScrollClickNSView: NSView {
+    var onScroll: ((Int) -> Void)?
+    var onClick: (() -> Void)?
     private var scrollAccumulator: CGFloat = 0
+
+    override func mouseDown(with event: NSEvent) {
+        onClick?()
+    }
 
     override func scrollWheel(with event: NSEvent) {
         let delta = event.scrollingDeltaY
@@ -382,17 +252,17 @@ final class ScrollWheelNSView: NSView {
             scrollAccumulator += delta
             let threshold: CGFloat = 8.0
             if scrollAccumulator >= threshold {
-                onStep?(1)
+                onScroll?(1)
                 scrollAccumulator = 0
             } else if scrollAccumulator <= -threshold {
-                onStep?(-1)
+                onScroll?(-1)
                 scrollAccumulator = 0
             }
         } else {
             if delta > 0 {
-                onStep?(1)
+                onScroll?(1)
             } else if delta < 0 {
-                onStep?(-1)
+                onScroll?(-1)
             }
         }
         if event.phase == .ended || event.phase == .cancelled {
