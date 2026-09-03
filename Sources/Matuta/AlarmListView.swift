@@ -307,6 +307,7 @@ struct AlarmListView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .disabled(warning.actionLabel == nil)
             } else if let info = report.primaryInfo {
                 // 단순 안내(Info, 예: 이어폰 연결): 문제 상태가 아니므로 중립적인 테마 색상으로 표시
                 Button(action: {
@@ -324,6 +325,7 @@ struct AlarmListView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .disabled(info.actionLabel == nil)
             } else {
                 // 완전 정상
                 HStack(spacing: 6) {
