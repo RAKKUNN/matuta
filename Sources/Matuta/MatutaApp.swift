@@ -5,7 +5,7 @@ import MatutaCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         DispatchQueue.main.async {
-            for window in NSApp.windows where window.identifier?.rawValue == "alarms" || window.title == "알람" {
+            for window in NSApp.windows where window.identifier?.rawValue == "alarms" || window.title == "Matuta" || window.title == "알람" {
                 window.center()
                 window.minSize = NSSize(width: 380, height: 440)
             }
@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
-            for window in sender.windows where window.identifier?.rawValue == "alarms" || window.title == "알람" {
+            for window in sender.windows where window.identifier?.rawValue == "alarms" || window.title == "Matuta" || window.title == "알람" {
                 window.makeKeyAndOrderFront(nil)
                 return true
             }
@@ -30,7 +30,7 @@ struct MatutaApp: App {
     @State private var model = AlarmListModel()
 
     var body: some Scene {
-        Window("알람", id: "alarms") {
+        Window("Matuta", id: "alarms") {
             AlarmListView(model: model)
         }
         .defaultSize(width: 440, height: 600)

@@ -16,6 +16,13 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Matuta"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
+if [ -f "Resources/AppIcon.icns" ]; then
+    cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
+fi
+if [ -f "Resources/logo.png" ]; then
+    cp Resources/logo.png "$APP/Contents/Resources/logo.png"
+fi
+
 # 로컬 실행용 임시 서명. 배포용 Developer ID 서명은 나중 단계에서 다룬다.
 codesign --force --sign - "$APP"
 

@@ -59,7 +59,7 @@ struct AlarmListView: View {
         .background(theme.baseBackground)
         .onAppear {
             DispatchQueue.main.async {
-                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "alarms" || $0.title == "알람" }) {
+                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "alarms" || $0.title == "Matuta" || $0.title == "알람" }) {
                     window.center()
                 }
             }
@@ -81,7 +81,16 @@ struct AlarmListView: View {
     private var headerView: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
+                HStack(spacing: 7) {
+                    if let logoPath = Bundle.main.path(forResource: "logo", ofType: "png"),
+                       let nsImage = NSImage(contentsOfFile: logoPath) {
+                        Image(nsImage: nsImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
+                            .clipShape(RoundedRectangle(cornerRadius: 3.5, style: .continuous))
+                    }
+
                     Text("MATUTA")
                         .font(.system(size: 11, weight: .bold))
                         .tracking(2.5)
