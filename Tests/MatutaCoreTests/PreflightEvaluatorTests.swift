@@ -74,3 +74,36 @@ func testPreflightWakeNotScheduledState() {
     #expect(report.isSafe == false)
     #expect(report.warnings.contains { $0.message.contains("전원 자동 깨우기") })
 }
+
+@Test("헤드폰 연결 시 outputDeviceBadge는 .info이며 안전(isSafe=true) 상태를 유지한다")
+func testPreflightHeadphonesBadgeIsInfo() {
+    let audio = AudioSnapshot(
+        defaultDeviceName: "AirPods Pro",
+        isHeadphones: true,
+        volume: 0.8,
+        isMuted: false
+    )
+    let report = PreflightEvaluator.evaluate(audio: audio, wakeScheduled: true, isSleepPrevented: true, alarm: nil)
+    #expect(report.isSafe == true)
+    #expect(report.outputDeviceBadge.severity == .info)
+    #expect(report.outputDeviceBadge.actionKind == .headphones)
+    #expect(report.volumeGuardBadge.severity == .info)
+    #expect(report.primaryWarning == nil)
+    #expect(report.primaryInfo?.kind == .headphones)
+}
+
+@Test("음소거 시 volumeGuardBadge는 .warning이며 원클릭 복구 actionKind가 .muted이다")
+func testPreflightMutedBadgeIsWarning() {
+    let audio = AudioSnapshot(
+        defaultDeviceName: "내장 스피커",
+        isHeadphones: false,
+        volume: 0.8,
+        isMuted: true
+    )
+    let report = PreflightEvaluator.evaluate(audio: audio, wakeScheduled: true, isSleepPrevented: true, alarm: nil)
+    #expect(report.isSafe == false)
+    #expect(report.volumeGuardBadge.severity == .warning)
+    #expect(report.volumeGuardBadge.actionKind == .muted)
+    #expect(report.primaryWarning?.kind == .muted)
+}
+

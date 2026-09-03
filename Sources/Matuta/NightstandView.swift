@@ -13,6 +13,7 @@ struct NightstandView: View {
     @State private var isCloseHovered: Bool = false
     @State private var candleFlicker: Bool = false
     @State private var pixelShiftOffset: CGSize = .zero
+    @State private var tickCount: Int = 0
 
     private var theme: CozyTheme {
         ThemeManager.shared.current
@@ -121,61 +122,32 @@ struct NightstandView: View {
 
                 Spacer()
 
-                // 하단 3중 방어선 상태 표시줄 (PreflightReport 실시간 연동)
+                // 하단 3중 방어선 상태 표시줄 (PreflightReport 산출물 직접 렌더링)
                 HStack(spacing: 16) {
                     // 1. 절전 방지 assertion 상태 (나이트스탠드 창이 열려 있는 동안 활성)
                     guardItem(
                         icon: "moon.stars.fill",
                         label: "절전 방지 활성",
-                        color: theme.accent
+                        severity: .info
                     )
 
-                    // 2. 오디오 출력 기기 상태 (헤드폰 감지 시 주황색 경고 + 원클릭 스피커 전환)
-                    if let report, report.audio.isHeadphones {
+                    // 2. 오디오 출력 기기 상태 (PreflightEvaluator 산출 뱃지)
+                    if let item = report?.outputDeviceBadge {
                         guardItem(
-                            icon: "headphones",
-                            label: "이어폰 연결됨 (울릴 때 스피커 전환)",
-                            color: Color.orange,
-                            action: {
-                                engine.switchToBuiltInSpeaker()
-                                refreshReport()
-                            }
-                        )
-                    } else {
-                        guardItem(
-                            icon: "speaker.wave.2.fill",
-                            label: "내장 스피커 준비됨",
-                            color: theme.accent
+                            icon: item.icon,
+                            label: item.label,
+                            severity: item.severity,
+                            action: item.actionKind != nil ? { handleAction(item.actionKind!) } : nil
                         )
                     }
 
-                    // 3. 볼륨 및 음소거 상태 (문제 감지 시 주황색 경고 + 원클릭 안전 볼륨 복구)
-                    if let report, report.audio.isMuted {
+                    // 3. 볼륨 및 뮤트 상태 (PreflightEvaluator 산출 뱃지)
+                    if let item = report?.volumeGuardBadge {
                         guardItem(
-                            icon: "speaker.slash.fill",
-                            label: "음소거 중 (울릴 때 자동 해제)",
-                            color: Color.orange,
-                            action: {
-                                engine.setVolumeToSafeLevel(0.7)
-                                refreshReport()
-                            }
-                        )
-                    } else if let report, report.audio.volume < 0.3 {
-                        let pct = Int(report.audio.volume * 100)
-                        guardItem(
-                            icon: "speaker.wave.1.fill",
-                            label: "볼륨 낮음(\(pct)% · 울릴 때 확보)",
-                            color: Color.orange,
-                            action: {
-                                engine.setVolumeToSafeLevel(0.7)
-                                refreshReport()
-                            }
-                        )
-                    } else {
-                        guardItem(
-                            icon: "shield.checkmark.fill",
-                            label: "울릴 때 스피커 보호 전환",
-                            color: theme.accent
+                            icon: item.icon,
+                            label: item.label,
+                            severity: item.severity,
+                            action: item.actionKind != nil ? { handleAction(item.actionKind!) } : nil
                         )
                     }
                 }
@@ -193,8 +165,9 @@ struct NightstandView: View {
         .onReceive(tick) { time in
             now = time
             updatePixelShift(at: time)
-            // 2초마다 CoreAudio 상태(이어폰 탈착, 볼륨 조절) 실시간 갱신
-            if Calendar.current.component(.second, from: time) % 2 == 0 {
+            tickCount += 1
+            if tickCount >= 2 {
+                tickCount = 0
                 refreshReport()
             }
         }
@@ -215,19 +188,40 @@ struct NightstandView: View {
         report = engine.evaluate(alarm: nextAlarm, isSleepPrevented: true)
     }
 
-    private func guardItem(icon: String, label: String, color: Color, action: (() -> Void)? = nil) -> some View {
-        Button(action: { action?() }) {
+    private func handleAction(_ kind: PreflightWarning.Kind) {
+        switch kind {
+        case .headphones:
+            engine.switchToBuiltInSpeaker()
+        case .muted, .lowVolume:
+            engine.setVolumeToSafeLevel(0.7)
+        case .wakeNotScheduled:
+            break
+        }
+        refreshReport()
+    }
+
+    private func guardItem(
+        icon: String,
+        label: String,
+        severity: PreflightWarning.Severity,
+        action: (() -> Void)? = nil
+    ) -> some View {
+        let isWarning = severity == .warning
+        let badgeColor = isWarning ? Color.orange : theme.accent
+        let textColor = isWarning ? Color.orange : Color.white.opacity(0.75)
+
+        return Button(action: { action?() }) {
             HStack(spacing: 5) {
                 Image(systemName: icon)
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(color)
+                    .foregroundStyle(badgeColor)
                 Text(label)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(color == theme.accent ? Color.white.opacity(0.7) : color)
+                    .foregroundStyle(textColor)
                 if action != nil {
                     Image(systemName: "arrow.up.forward.circle.fill")
                         .font(.system(size: 9))
-                        .foregroundStyle(color)
+                        .foregroundStyle(badgeColor)
                 }
             }
         }

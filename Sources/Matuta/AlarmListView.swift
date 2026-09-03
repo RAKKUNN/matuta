@@ -290,14 +290,14 @@ struct AlarmListView: View {
     @ViewBuilder
     private var preflightStatusPill: some View {
         if let report = preflightReport {
-            if report.audio.isHeadphones {
+            if let warning = report.primaryWarning {
+                // 실제 문제(Warning)가 있을 때만 주황색 경고 + 원클릭 액션 노출 (§4 원칙 2)
                 Button(action: {
-                    model.switchToBuiltInSpeaker()
-                    preflightReport = model.evaluatePreflight()
+                    handlePreflightAction(warning.kind)
                 }) {
                     HStack(spacing: 5) {
-                        Image(systemName: "headphones")
-                        Text("이어폰 연결됨 → 스피커 전환")
+                        Image(systemName: warning.icon)
+                        Text(warning.actionLabel != nil ? "\(warning.message) → \(warning.actionLabel!)" : warning.message)
                     }
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color.orange)
@@ -307,41 +307,25 @@ struct AlarmListView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-            } else if report.audio.isMuted {
+            } else if let info = report.primaryInfo {
+                // 단순 안내(Info, 예: 이어폰 연결): 문제 상태가 아니므로 중립적인 테마 색상으로 표시
                 Button(action: {
-                    model.setVolumeToSafeLevel(0.7)
-                    preflightReport = model.evaluatePreflight()
+                    handlePreflightAction(info.kind)
                 }) {
                     HStack(spacing: 5) {
-                        Image(systemName: "speaker.slash.fill")
-                        Text("음소거 중 → 70%로 해제")
+                        Image(systemName: info.icon)
+                        Text(info.actionLabel != nil ? "\(info.message) → \(info.actionLabel!)" : info.message)
                     }
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.orange)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(theme.textSecondary)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4.5)
-                    .background(Color.orange.opacity(0.12))
-                    .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            } else if report.audio.volume < 0.3 {
-                Button(action: {
-                    model.setVolumeToSafeLevel(0.7)
-                    preflightReport = model.evaluatePreflight()
-                }) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "speaker.wave.1.fill")
-                        Text("볼륨 낮음(\(Int(report.audio.volume * 100))%) → 70%로 조정")
-                    }
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.orange)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4.5)
-                    .background(Color.orange.opacity(0.12))
+                    .background(theme.cardBackground)
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
             } else {
+                // 완전 정상
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 11))
@@ -356,6 +340,18 @@ struct AlarmListView: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(theme.textTertiary)
         }
+    }
+
+    private func handlePreflightAction(_ kind: PreflightWarning.Kind) {
+        switch kind {
+        case .headphones:
+            model.switchToBuiltInSpeaker()
+        case .muted, .lowVolume:
+            model.setVolumeToSafeLevel(0.7)
+        case .wakeNotScheduled:
+            break
+        }
+        preflightReport = model.evaluatePreflight()
     }
 }
 
