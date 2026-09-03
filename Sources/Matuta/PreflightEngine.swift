@@ -16,13 +16,22 @@ public final class PreflightEngine {
         self.wakeScheduler = wakeScheduler
     }
 
-    public func evaluate(alarm: Alarm?) async -> PreflightReport {
+    public func evaluate(alarm: Alarm?, isSleepPrevented: Bool = false) -> PreflightReport {
         let snapshot = audioGuard.captureSnapshot()
         let isWakeArmed = wakeScheduler.isWakeScheduled
         return PreflightEvaluator.evaluate(
             audio: snapshot,
             wakeScheduled: isWakeArmed,
+            isSleepPrevented: isSleepPrevented,
             alarm: alarm
         )
+    }
+
+    public func switchToBuiltInSpeaker() {
+        audioGuard.switchToBuiltInSpeaker()
+    }
+
+    public func setVolumeToSafeLevel(_ volume: Float = 0.7) {
+        audioGuard.setVolumeToSafeLevel(volume)
     }
 }

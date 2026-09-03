@@ -89,6 +89,21 @@ public final class AudioGuard {
         self.previousSnapshot = nil
     }
 
+    /// 사용자가 원클릭으로 내장 스피커로 즉시 전환할 때 사용
+    public func switchToBuiltInSpeaker() {
+        if let speakerID = findBuiltInSpeakerDeviceID() {
+            setDefaultOutputDevice(speakerID)
+        }
+    }
+
+    /// 사용자가 원클릭으로 음소거를 해제하고 안전 볼륨(기본 70%)으로 즉시 올릴 때 사용
+    public func setVolumeToSafeLevel(_ volume: Float = 0.7) {
+        if let current = getDefaultOutputDeviceID() {
+            setMute(deviceID: current, isMuted: false)
+            setVolume(deviceID: current, volume: volume)
+        }
+    }
+
     // MARK: - CoreAudio Device Helpers
 
     public func getDefaultOutputDeviceID() -> AudioDeviceID? {

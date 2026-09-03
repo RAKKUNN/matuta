@@ -128,6 +128,21 @@ final class AlarmListModel {
         nightstand.show(nextFireDate: nextFireDate, nextAlarm: nextAlarm)
     }
 
+    /// 오디오 하드웨어 및 전원 사전 진단
+    func evaluatePreflight() -> PreflightReport {
+        preflightEngine.evaluate(alarm: nextAlarm, isSleepPrevented: false)
+    }
+
+    /// 내장 스피커로 즉시 전환
+    func switchToBuiltInSpeaker() {
+        preflightEngine.switchToBuiltInSpeaker()
+    }
+
+    /// 안전 볼륨으로 즉시 조정
+    func setVolumeToSafeLevel(_ volume: Float = 0.7) {
+        preflightEngine.setVolumeToSafeLevel(volume)
+    }
+
     /// 스페이스바 또는 마우스 클릭으로 알람을 완전히 껐을 때.
     func dismissFiring() {
         fireTask?.cancel()

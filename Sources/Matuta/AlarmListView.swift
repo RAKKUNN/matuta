@@ -3,6 +3,8 @@ import MatutaCore
 
 struct AlarmListView: View {
     @Bindable var model: AlarmListModel
+    @State private var preflightReport: PreflightReport?
+    private let tick = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     private var theme: CozyTheme {
         ThemeManager.shared.current
@@ -58,11 +60,15 @@ struct AlarmListView: View {
         .frame(minWidth: 380, idealWidth: 460, maxWidth: .infinity, minHeight: 440, idealHeight: 620, maxHeight: .infinity)
         .background(theme.baseBackground)
         .onAppear {
+            preflightReport = model.evaluatePreflight()
             DispatchQueue.main.async {
                 if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "alarms" || $0.title == "Matuta" || $0.title == "알람" }) {
                     window.center()
                 }
             }
+        }
+        .onReceive(tick) { _ in
+            preflightReport = model.evaluatePreflight()
         }
         .sheet(item: $model.editing) { alarm in
             AlarmEditView(
@@ -258,10 +264,8 @@ struct AlarmListView: View {
     // MARK: - Footer
 
     private var footerView: some View {
-        HStack {
-            Text("\(model.alarms.count)개의 알람")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(theme.textTertiary)
+        HStack(spacing: 12) {
+            preflightStatusPill
 
             Spacer()
 
@@ -280,6 +284,77 @@ struct AlarmListView: View {
                 .shadow(color: theme.accent.opacity(0.2), radius: 6, y: 2)
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var preflightStatusPill: some View {
+        if let report = preflightReport {
+            if report.audio.isHeadphones {
+                Button(action: {
+                    model.switchToBuiltInSpeaker()
+                    preflightReport = model.evaluatePreflight()
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "headphones")
+                        Text("이어폰 연결됨 → 스피커 전환")
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.orange)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4.5)
+                    .background(Color.orange.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            } else if report.audio.isMuted {
+                Button(action: {
+                    model.setVolumeToSafeLevel(0.7)
+                    preflightReport = model.evaluatePreflight()
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "speaker.slash.fill")
+                        Text("음소거 중 → 70%로 해제")
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.orange)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4.5)
+                    .background(Color.orange.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            } else if report.audio.volume < 0.3 {
+                Button(action: {
+                    model.setVolumeToSafeLevel(0.7)
+                    preflightReport = model.evaluatePreflight()
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "speaker.wave.1.fill")
+                        Text("볼륨 낮음(\(Int(report.audio.volume * 100))%) → 70%로 조정")
+                    }
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.orange)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4.5)
+                    .background(Color.orange.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            } else {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(theme.accent)
+                    Text("스피커 · 볼륨 \(Int(report.audio.volume * 100))%")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(theme.textSecondary)
+                }
+            }
+        } else {
+            Text("\(model.alarms.count)개의 알람")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(theme.textTertiary)
         }
     }
 }

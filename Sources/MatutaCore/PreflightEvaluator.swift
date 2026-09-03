@@ -20,11 +20,18 @@ public struct PreflightReport: Sendable, Equatable {
     public let isSafe: Bool
     public let warnings: [PreflightWarning]
     public let summary: String
+    public let audio: AudioSnapshot
 
-    public init(isSafe: Bool, warnings: [PreflightWarning], summary: String) {
+    public init(
+        isSafe: Bool,
+        warnings: [PreflightWarning],
+        summary: String,
+        audio: AudioSnapshot = AudioSnapshot(defaultDeviceName: "기본 기기", isHeadphones: false, volume: 0.5, isMuted: false)
+    ) {
         self.isSafe = isSafe
         self.warnings = warnings
         self.summary = summary
+        self.audio = audio
     }
 }
 
@@ -33,6 +40,7 @@ public struct PreflightEvaluator: Sendable {
     public static func evaluate(
         audio: AudioSnapshot,
         wakeScheduled: Bool,
+        isSleepPrevented: Bool = false,
         alarm: Alarm?
     ) -> PreflightReport {
         var warnings: [PreflightWarning] = []
@@ -58,8 +66,8 @@ public struct PreflightEvaluator: Sendable {
             ))
         }
 
-        // 3. 전원 깨우기 상태
-        if let alarm, alarm.isEnabled && !wakeScheduled {
+        // 3. 전원 깨우기 상태 (절전 방지 활성 또는 전원 예약이 되어 있는 경우 정상)
+        if let alarm, alarm.isEnabled && !wakeScheduled && !isSleepPrevented {
             warnings.append(PreflightWarning(
                 message: "전원 자동 깨우기가 예약되지 않았습니다.",
                 severity: .warning
@@ -74,6 +82,6 @@ public struct PreflightEvaluator: Sendable {
             summary = warnings.map(\.message).joined(separator: " · ")
         }
 
-        return PreflightReport(isSafe: isSafe, warnings: warnings, summary: summary)
+        return PreflightReport(isSafe: isSafe, warnings: warnings, summary: summary, audio: audio)
     }
 }
