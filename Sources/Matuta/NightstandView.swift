@@ -124,7 +124,7 @@ struct NightstandView: View {
                 // 하단 3중 방어선 상태 표시줄
                 HStack(spacing: 18) {
                     guardItem(icon: "speaker.wave.2.fill", label: "내장 스피커 보호", color: theme.accent)
-                    guardItem(icon: "bolt.fill", label: "절전 깨우기 예약됨", color: theme.accent)
+                    guardItem(icon: "moon.stars.fill", label: "절전 방지 활성", color: theme.accent)
                     guardItem(icon: "shield.fill", label: "AudioGuard 활성", color: theme.accent)
                 }
                 .padding(.horizontal, 20)
