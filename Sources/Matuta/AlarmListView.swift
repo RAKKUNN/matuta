@@ -429,10 +429,14 @@ private struct ArtisanAlarmCard: View, Localizable {
                             let isActive = alarm.weekdays.contains(day)
                             Text(t(day.shortNameText))
                                 .font(.system(size: 9, weight: isActive ? .bold : .medium))
-                                .frame(width: 18, height: 18)
+                                .fixedSize()
+                                // 한국어는 "월" 한 글자, 영어는 "Mon" 세 글자다.
+                                // 고정 폭으로 잡으면 M·W처럼 넓은 글자가 잘린다.
+                                .padding(.horizontal, 5)
+                                .frame(minWidth: 18, minHeight: 18)
                                 .background(isActive ? (alarm.isEnabled ? theme.accent : Color.gray.opacity(0.2)) : Color.clear)
                                 .foregroundStyle(isActive ? Color.white : theme.textTertiary)
-                                .clipShape(Circle())
+                                .clipShape(Capsule())
                         }
 
                         if alarm.weekdays.isEmpty {
