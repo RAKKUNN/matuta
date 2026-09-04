@@ -147,6 +147,12 @@ extension Localizer {
             case .english: return "Alarm label (e.g. Wake up, Coffee time)"
             }
 
+        case .seedAlarmLabel:
+            switch language {
+            case .korean: return "상쾌한 아침"
+            case .english: return "Crisp Morning"
+            }
+
         case .snooze:
             switch language {
             case .korean: return "스누즈"

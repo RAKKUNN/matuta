@@ -29,19 +29,24 @@ public struct AlarmStore: Sendable {
             .appendingPathComponent("alarms.json")
     }
 
-    public static var seedAlarms: [Alarm] {
+    public static func seedAlarms(for language: ResolvedLanguage) -> [Alarm] {
         [
             Alarm(
                 hour: 7,
                 minute: 0,
                 weekdays: [.monday, .tuesday, .wednesday, .thursday, .friday],
-                label: "상쾌한 아침",
+                label: Localizer.string(.seedAlarmLabel, language),
                 source: .builtIn(.default),
                 volume: 0.8,
                 fadeIn: true,
                 isEnabled: false
             )
         ]
+    }
+
+    public static var seedAlarms: [Alarm] {
+        let resolved = LanguageResolver.resolve(.system, preferredLanguages: Locale.preferredLanguages)
+        return seedAlarms(for: resolved)
     }
 
     /// 알람 목록과 스누즈 상태를 함께 로드한다.

@@ -3,7 +3,7 @@ import MatutaCore
 
 struct AlarmOverlayView: View, Localizable {
     let alarm: Alarm
-    let activeSourceName: String
+    let activeSourceText: LocalizedText?
     let onDismiss: () -> Void
     let onSnooze: () -> Void
     @Environment(LanguageSetting.self) var language
@@ -36,7 +36,7 @@ struct AlarmOverlayView: View, Localizable {
                         .shadow(color: theme.accent.opacity(pulseAura ? 0.35 : 0.15), radius: 30, y: 10)
 
                     // 알람 라벨
-                    Text(alarm.label ?? (language.resolved == .korean ? "기분 좋은 아침" : "Pleasant Morning"))
+                    Text(alarm.label ?? t(.pleasantMorning))
                         .font(.system(size: 20, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.white.opacity(0.85))
                         .padding(.top, 4)
@@ -159,7 +159,7 @@ struct AlarmOverlayView: View, Localizable {
             sourceIcon
                 .font(.system(size: 11, weight: .semibold))
 
-            Text(activeSourceName.isEmpty ? defaultSourceText : activeSourceName)
+            Text(activeSourceText.map { t($0) } ?? defaultSourceText)
                 .font(.system(size: 12, weight: .semibold))
         }
         .foregroundStyle(Color.white.opacity(0.9))

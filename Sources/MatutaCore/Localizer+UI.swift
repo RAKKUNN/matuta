@@ -105,6 +105,12 @@ extension Localizer {
             case .english: return "Alarm Firing"
             }
 
+        case .pleasantMorning:
+            switch language {
+            case .korean: return "기분 좋은 아침"
+            case .english: return "Pleasant Morning"
+            }
+
         case .openApp:
             switch language {
             case .korean: return "알람 열기"
@@ -268,6 +274,27 @@ extension Localizer {
             switch language {
             case .korean: return "중지"
             case .english: return "Stop"
+            }
+
+        case .lofiGirlWeb:
+            switch language {
+            case .korean: return "Lofi Girl (웹)"
+            case .english: return "Lofi Girl (Web)"
+            }
+
+        case .playbackPrimary(let name):
+            return name
+
+        case .playbackWithBackup(let name):
+            switch language {
+            case .korean: return "\(name) (백업음 동시 재생)"
+            case .english: return "\(name) (Backup tone active)"
+            }
+
+        case .playbackFallback(let name):
+            switch language {
+            case .korean: return "\(name) (폴백)"
+            case .english: return "\(name) (Fallback)"
             }
 
         case .themeMidnight:

@@ -71,6 +71,7 @@ func failingSourceFallsBackToBackup() async {
     #expect(backup.playedVolume == 0.7)
     #expect(chain.isPlayingBackupConcurrently == false)
     #expect(chain.activeSourceName.contains("Radar"))
+    #expect(chain.activeSourceText == .playbackFallback(name: "Radar"))
 }
 
 @MainActor
@@ -85,6 +86,7 @@ func unverifiableSourcePlaysConcurrentlyWithBackup() async {
     #expect(primary.played == true)
     #expect(backup.played == true)
     #expect(chain.isPlayingBackupConcurrently == true)
+    #expect(chain.activeSourceText == .playbackWithBackup(name: "Spotify"))
 }
 
 @MainActor

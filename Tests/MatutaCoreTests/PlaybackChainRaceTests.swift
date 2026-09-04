@@ -56,4 +56,5 @@ func testPlaybackChainRaceConditionStop() async {
     #expect(backup.isPlaying == false)
     #expect(chain.isPlayingBackupConcurrently == false)
     #expect(chain.activeSourceName == "")
+    #expect(chain.activeSourceText == nil)
 }

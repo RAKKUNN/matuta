@@ -12,7 +12,12 @@ public final class PlaybackChain {
     private var generation: Int = 0
 
     public private(set) var isPlayingBackupConcurrently: Bool = false
-    public private(set) var activeSourceName: String = ""
+    public private(set) var activeSourceText: LocalizedText? = nil
+
+    public var activeSourceName: String {
+        guard let activeSourceText else { return "" }
+        return Localizer.string(activeSourceText, .korean)
+    }
 
     public init() {}
 
@@ -33,7 +38,7 @@ public final class PlaybackChain {
         if primary.needsBackupTone {
             // 검증 불가능 소스: 주 소스 실행 + 백업음 동시 재생
             isPlayingBackupConcurrently = true
-            activeSourceName = "\(primary.displayName) (백업음 동시 재생)"
+            activeSourceText = .playbackWithBackup(name: primary.displayName)
 
             // 주 소스 실행 (Spotify / 웹 브라우저 등 지연 가능한 호출)
             try? await primary.play(volume: volume, fadeIn: fadeIn)
@@ -57,7 +62,7 @@ public final class PlaybackChain {
         } else {
             // 검증 가능 소스: 주 소스 시도 후 실패 시 백업음으로 폴백
             isPlayingBackupConcurrently = false
-            activeSourceName = primary.displayName
+            activeSourceText = .playbackPrimary(name: primary.displayName)
 
             do {
                 try await primary.play(volume: volume, fadeIn: fadeIn)
@@ -72,7 +77,7 @@ public final class PlaybackChain {
                     backup.stop()
                     return
                 }
-                activeSourceName = "\(backup.displayName) (폴백)"
+                activeSourceText = .playbackFallback(name: backup.displayName)
                 try? await backup.play(volume: volume, fadeIn: fadeIn)
                 guard currentGen == self.generation else {
                     primary.stop()
@@ -90,6 +95,6 @@ public final class PlaybackChain {
         primarySource = nil
         backupSource = nil
         isPlayingBackupConcurrently = false
-        activeSourceName = ""
+        activeSourceText = nil
     }
 }

@@ -149,7 +149,7 @@ struct SoundOmniboxView: View, Localizable {
         HStack(spacing: 6) {
             presetChip("Morning Harp", source: .builtIn(.morningHarp), icon: "bell.fill")
             presetChip("Warm Rhodes", source: .builtIn(.warmRhodes), icon: "bell.fill")
-            presetChip(language.resolved == .korean ? "Lofi Girl (웹)" : "Lofi Girl (Web)", source: .web(URL(string: "https://www.youtube.com/watch?v=jfKfPfyJRdk")!), icon: "play.rectangle.fill")
+            presetChip(t(.lofiGirlWeb), source: .web(URL(string: "https://www.youtube.com/watch?v=jfKfPfyJRdk")!), icon: "play.rectangle.fill")
             presetChip("Spotify Top 50", source: .spotify(uri: "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"), icon: "waveform")
         }
     }

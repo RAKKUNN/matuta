@@ -57,6 +57,7 @@ func testAllLocalizedKeysNonEmpty() {
         .volumeLabel,
         .alarmName,
         .alarmNamePlaceholder,
+        .seedAlarmLabel,
         .snooze,
         .snoozeDescription,
         .minutes(9),
@@ -84,6 +85,7 @@ func testAllLocalizedKeysNonEmpty() {
         .snoozeWithMinutes(9),
         .pressSpaceToDismiss,
         .alarmFiring,
+        .pleasantMorning,
         .openApp,
         .openAlarmsWindow,
         .nightstand,
@@ -115,6 +117,12 @@ func testAllLocalizedKeysNonEmpty() {
         .chooseFile,
         .preview,
         .stop,
+        .lofiGirlWeb,
+
+        // Playback Status
+        .playbackPrimary(name: "Morning Harp"),
+        .playbackWithBackup(name: "Spotify"),
+        .playbackFallback(name: "Radar"),
 
         // Themes
         .themeMidnight,
@@ -168,4 +176,20 @@ func testParameterizedKeysContainValues() {
     let appMusic = LocalizedText.automationDenied(target: .appleMusic)
     #expect(Localizer.string(appMusic, .korean).contains("음악"))
     #expect(Localizer.string(appMusic, .english).contains("Music"))
+
+    let primary = LocalizedText.playbackPrimary(name: "Morning Harp")
+    #expect(Localizer.string(primary, .korean).contains("Morning Harp"))
+    #expect(Localizer.string(primary, .english).contains("Morning Harp"))
+
+    let withBackup = LocalizedText.playbackWithBackup(name: "Spotify")
+    #expect(Localizer.string(withBackup, .korean).contains("Spotify"))
+    #expect(Localizer.string(withBackup, .korean).contains("백업음 동시 재생"))
+    #expect(Localizer.string(withBackup, .english).contains("Spotify"))
+    #expect(Localizer.string(withBackup, .english).contains("Backup tone active"))
+
+    let fallback = LocalizedText.playbackFallback(name: "Radar")
+    #expect(Localizer.string(fallback, .korean).contains("Radar"))
+    #expect(Localizer.string(fallback, .korean).contains("폴백"))
+    #expect(Localizer.string(fallback, .english).contains("Radar"))
+    #expect(Localizer.string(fallback, .english).contains("Fallback"))
 }

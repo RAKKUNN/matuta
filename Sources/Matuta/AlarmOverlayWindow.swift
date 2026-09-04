@@ -56,7 +56,7 @@ final class AlarmOverlayController {
             window.contentView = NSHostingView(
                 rootView: AlarmOverlayView(
                     alarm: alarm,
-                    activeSourceName: playbackChain.activeSourceName,
+                    activeSourceText: playbackChain.activeSourceText,
                     onDismiss: onDismiss,
                     onSnooze: onSnooze
                 )

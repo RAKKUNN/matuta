@@ -52,6 +52,7 @@ public enum LocalizedText: Sendable, Equatable, Hashable {
     case volumeLabel
     case alarmName
     case alarmNamePlaceholder
+    case seedAlarmLabel
     case snooze
     case snoozeDescription
     case minutes(Int)
@@ -79,6 +80,7 @@ public enum LocalizedText: Sendable, Equatable, Hashable {
     case snoozeWithMinutes(Int)
     case pressSpaceToDismiss
     case alarmFiring
+    case pleasantMorning
     case openApp
     case openAlarmsWindow
     case nightstand
@@ -110,6 +112,12 @@ public enum LocalizedText: Sendable, Equatable, Hashable {
     case chooseFile
     case preview
     case stop
+    case lofiGirlWeb
+
+    // MARK: - Playback Status
+    case playbackPrimary(name: String)
+    case playbackWithBackup(name: String)
+    case playbackFallback(name: String)
 
     // MARK: - Themes
     case themeMidnight

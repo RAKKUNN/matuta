@@ -69,3 +69,14 @@ func seedAlarmIsSingleAndDisabled() {
     #expect(AlarmStore.seedAlarms[0].minute == 0)
     #expect(AlarmStore.seedAlarms[0].isEnabled == false)
 }
+
+@Test("첫 실행용 알람 라벨은 언어에 맞게 생성된다")
+func seedAlarmIsLocalizedPerLanguage() {
+    let koSeed = AlarmStore.seedAlarms(for: .korean)
+    #expect(koSeed.count == 1)
+    #expect(koSeed[0].label == "상쾌한 아침")
+
+    let enSeed = AlarmStore.seedAlarms(for: .english)
+    #expect(enSeed.count == 1)
+    #expect(enSeed[0].label == "Crisp Morning")
+}
