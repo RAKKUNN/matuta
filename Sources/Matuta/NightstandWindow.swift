@@ -34,7 +34,9 @@ final class NightstandController {
             defer: false
         )
         win.setFrame(screen.frame, display: true)
-        win.level = .normal
+        // .normal이면 메뉴 막대와 Dock이 위에 남는다. 침대 옆 시계인데
+        // 화면 위아래가 빛나면 목적이 반감된다. 알람 오버레이와 같은 레벨을 쓴다.
+        win.level = .screenSaver
         win.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         win.isOpaque = true
         win.backgroundColor = .black
