@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matuta — a macOS alarm clock that actually goes off</title>
+<meta name="description" content="A macOS alarm clock. Wake up to any music you want — and stop worrying that it won't go off. Free and open source.">
+<meta property="og:title" content="Matuta">
+<meta property="og:description" content="A macOS alarm clock. Wake up to any music you want — and stop worrying that it won't go off.">
+<meta property="og:image" content="https://rakkunn.github.io/matuta/images/main.png">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#171414">
+<link rel="icon" href="images/logo.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="#top">
+    <img src="images/logo.png" alt="" width="24" height="24">
+    <span>Matuta</span>
+  </a>
+  <div class="nav-right">
+    <button class="lang" id="lang-toggle" type="button" aria-label="Switch language">한국어</button>
+    <a class="nav-link" href="https://github.com/RAKKUNN/matuta">GitHub</a>
+  </div>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────── -->
+<header class="hero" id="top">
+  <div class="glow" aria-hidden="true"></div>
+
+  <div class="hero-inner">
+    <div class="clock" aria-hidden="true">
+      <span id="hh">00</span><span class="colon">:</span><span id="mm">00</span>
+    </div>
+
+    <p class="next-alarm" id="next-alarm">
+      <span class="dot"></span>
+      <span data-en="Next alarm 7:00 AM · rings even if the lid is closed"
+            data-ko="다음 알람 오전 7:00 · 덮개를 닫아도 울립니다"></span>
+    </p>
+
+    <h1 class="title" data-en="Matuta" data-ko="Matuta">Matuta</h1>
+
+    <p class="tagline"
+       data-en="Wake up to any music you want — and stop worrying that it won't go off."
+       data-ko="원하는 음악으로 깨우고, 울리지 않을 이유를 미리 없앱니다."></p>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/RAKKUNN/matuta/releases/latest"
+         data-en="Download for macOS" data-ko="macOS용 내려받기"></a>
+      <a class="btn btn-ghost" href="https://github.com/RAKKUNN/matuta"
+         data-en="View source" data-ko="소스 보기"></a>
+    </div>
+
+    <p class="meta" data-en="Free · MIT · macOS 14.0+ · Signed and notarized"
+                    data-ko="무료 · MIT · macOS 14.0 이상 · 서명·공증 완료"></p>
+  </div>
+
+  <div class="scroll-cue" aria-hidden="true"><span></span></div>
+</header>
+
+<main>
+
+<!-- ── Problem ──────────────────────────────────────── -->
+<section class="section" id="why">
+  <h2 class="section-title reveal"
+      data-en="Your Mac's alarm has three holes in it."
+      data-ko="맥 기본 알람에는 구멍이 셋 있습니다."></h2>
+
+  <ul class="holes">
+    <li class="hole reveal">
+      <span class="hole-num">01</span>
+      <p data-en="It doesn't ring once your Mac goes to sleep."
+         data-ko="맥이 절전에 들어가면 아예 울리지 않습니다."></p>
+    </li>
+    <li class="hole reveal">
+      <span class="hole-num">02</span>
+      <p data-en="A handful of built-in tones. You can't use your own music."
+         data-ko="내장 벨소리 몇 개뿐. 내 음악은 못 씁니다."></p>
+    </li>
+    <li class="hole reveal">
+      <span class="hole-num">03</span>
+      <p data-en="No fade-in, no snooze length, no say in which speaker it uses."
+         data-ko="페이드인도, 스누즈 길이도, 어느 스피커로 나갈지도 정할 수 없습니다."></p>
+    </li>
+  </ul>
+
+  <p class="lede reveal"
+     data-en="And most alarm apps assume that ringing is the whole job. But a Mac isn't a phone. Your output might be routed to Bluetooth earbuds, the volume might be at zero, the system might be muted — and you'd never know until you slept through your morning."
+     data-ko="그리고 대부분의 알람 앱은 울리기만 하면 끝이라고 가정합니다. 그런데 맥은 폰이 아닙니다. 출력이 블루투스 이어폰으로 가 있을 수도, 볼륨이 0일 수도, 음소거일 수도 있습니다 — 늦잠을 자고 나서야 알게 됩니다."></p>
+</section>
+
+<!-- ── Reliability spotlight ────────────────────────── -->
+<section class="section spotlight" id="reliability">
+  <h2 class="section-title reveal"
+      data-en="So it checks before you fall asleep."
+      data-ko="그래서 잠들기 전에 미리 점검합니다."></h2>
+
+  <p class="lede reveal"
+     data-en="The nightstand view keeps a status row along the bottom. When something would stop the alarm from waking you, it turns amber — and fixes itself in one click."
+     data-ko="나이트스탠드 하단에 상태 줄이 있습니다. 알람을 방해할 만한 것이 생기면 주황으로 바뀌고, 누르면 그 자리에서 고쳐집니다."></p>
+
+  <div class="badge-row reveal" role="img"
+       aria-label="Status row: sleep prevention active, built-in speaker ready, system is muted">
+    <span class="badge"><i>☾</i><b data-en="Sleep Prevention Active" data-ko="절전 방지 활성"></b></span>
+    <span class="badge"><i>◍</i><b data-en="Built-in Speaker Ready" data-ko="내장 스피커 준비됨"></b></span>
+    <span class="badge warn" id="badge-warn"><i>⊘</i><b data-en="System is muted" data-ko="시스템 음소거"></b><em data-en="Unmute to 70%" data-ko="70%로 해제"></em></span>
+  </div>
+
+  <p class="hint reveal"
+     data-en="Sources it can't verify — an external app, a browser tab — get a backup tone underneath. Something always makes noise."
+     data-ko="외부 앱이나 브라우저처럼 재생을 검증할 수 없는 소스에는 백업음을 함께 깝니다. 무슨 일이 있어도 소리는 납니다."></p>
+</section>
+
+<!-- ── Features ─────────────────────────────────────── -->
+<section class="section" id="features">
+
+  <div class="feature reveal">
+    <div class="feature-text">
+      <h3 data-en="One field takes anything." data-ko="칸 하나가 다 받습니다."></h3>
+      <p data-en="Paste a link, drop a file, or type a song name. Matuta works out whether it's a built-in tone, a local file, internet radio, Apple Music, Spotify, or the web."
+         data-ko="링크를 붙여넣거나, 파일을 끌어다 놓거나, 곡 이름을 칩니다. 내장 벨소리인지 로컬 파일인지 라디오인지 Apple Music인지 Spotify인지 웹인지는 앱이 판별합니다."></p>
+    </div>
+    <div class="feature-shot">
+      <img src="images/edit.png" alt="Alarm editor with a single input field" loading="lazy">
+    </div>
+  </div>
+
+  <div class="feature reverse reveal">
+    <div class="feature-text">
+      <h3 data-en="It wakes the Mac up." data-ko="맥을 깨웁니다."></h3>
+      <p data-en="Matuta schedules a power event two minutes before each alarm. Close the lid and it still rings — the thing the built-in Clock app can't do."
+         data-ko="알람 2분 전에 전원 이벤트를 예약합니다. 덮개를 닫아둬도 울립니다 — 기본 시계 앱이 못 하는 바로 그것입니다."></p>
+    </div>
+    <div class="feature-shot">
+      <img src="images/nightstand.png" alt="Nightstand full-screen clock" loading="lazy">
+    </div>
+  </div>
+
+  <div class="feature reveal">
+    <div class="feature-text">
+      <h3 data-en="Korean and English, instantly." data-ko="한국어와 영어, 즉시."></h3>
+      <p data-en="Follows your system language by default. Change it in Settings and the whole app switches without a restart — including the full-screen views."
+         data-ko="기본은 시스템 언어를 따릅니다. 설정에서 바꾸면 전체화면 화면들까지 포함해 앱 전체가 재시작 없이 바뀝니다."></p>
+    </div>
+    <div class="feature-shot narrow">
+      <img src="images/settings.png" alt="Settings window with a language picker" loading="lazy">
+    </div>
+  </div>
+
+</section>
+
+<!-- ── Dismiss ──────────────────────────────────────── -->
+<section class="section keys" id="dismiss">
+  <h2 class="section-title reveal"
+      data-en="Easy to turn off. Harder to fall back asleep."
+      data-ko="끄기는 쉽게. 다시 자기는 어렵게."></h2>
+  <div class="keycap reveal" aria-hidden="true">space</div>
+  <p class="hint reveal"
+     data-en="Spacebar dismisses the alarm. Snooze is deliberately mouse-only."
+     data-ko="스페이스바로 알람을 끕니다. 스누즈는 일부러 마우스로만 누르게 했습니다."></p>
+</section>
+
+<!-- ── Download ─────────────────────────────────────── -->
+<section class="section download" id="download">
+  <h2 class="section-title reveal" data-en="Get Matuta" data-ko="Matuta 받기"></h2>
+  <div class="cta reveal">
+    <a class="btn btn-primary" href="https://github.com/RAKKUNN/matuta/releases/latest"
+       data-en="Download for macOS" data-ko="macOS용 내려받기"></a>
+  </div>
+  <p class="hint reveal"
+     data-en="Signed with a Developer ID and notarized by Apple, so it opens without warnings. Requires macOS 14.0 or later."
+     data-ko="Developer ID로 서명하고 Apple 공증을 받아 경고 없이 열립니다. macOS 14.0 이상이 필요합니다."></p>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p>
+    <span data-en="Named after " data-ko="이름은 로마 신화의 새벽 여신 "></span><i>Mater Matuta</i><span data-en=", the Roman goddess of the dawn." data-ko="에서 왔습니다."></span>
+  </p>
+  <p class="footer-links">
+    <a href="https://github.com/RAKKUNN/matuta">GitHub</a>
+    <a href="https://github.com/RAKKUNN/matuta/releases">Releases</a>
+    <a href="https://github.com/RAKKUNN/matuta/blob/main/LICENSE">MIT</a>
+  </p>
+  <p class="colophon" data-en="Motion by anime.js. Built without a build step."
+                      data-ko="모션은 anime.js. 빌드 도구 없이 만들었습니다."></p>
+</footer>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
