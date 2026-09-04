@@ -1,103 +1,113 @@
 # Matuta
 
-**macOS 알람 앱.** 원하는 음악으로 깨우고, 울리지 않을 이유를 미리 없앤다.
+**A macOS alarm clock.** Wake up to any music you want — and stop worrying that it won't go off.
 
-> *마테르 마투타*(Mater Matuta)는 로마 신화의 새벽과 아침빛의 여신이다. 라틴어 *matutinus*(아침의)와 프랑스어 *matin*이 이 어근에서 나왔다.
+> *Mater Matuta* was the Roman goddess of the dawn and the morning light. The Latin *matutinus* ("of the morning") and the French *matin* both come from her name.
 
-macOS 14.0 이상 · MIT 라이선스
+macOS 14.0+ · MIT License · [한국어](README.ko.md)
 
 ---
 
-## 왜 만들었나
+## Why
 
-macOS 기본 시계 앱의 알람에는 구멍이 세 개 있다.
+The alarm in the built-in macOS Clock app has three holes in it.
 
-- **절전에 들어가면 아예 안 울린다**
-- 내장 벨소리 몇 개뿐, 내 음악을 못 넣는다
-- 볼륨 페이드인·스누즈 길이·출력 기기 제어가 없다
+- **It doesn't ring once your Mac goes to sleep.**
+- You get a handful of built-in tones. You can't use your own music.
+- No fade-in, no snooze length, no control over which speaker it comes out of.
 
-그런데 기존 앱들은 대부분 **"일단 울리기만 하면 끝"을 가정**한다. 맥은 아이폰과 달리 출력이 블루투스 이어폰으로 가 있을 수도, 볼륨이 0일 수도, 음소거일 수도 있다.
+And most alarm apps assume that ringing is the whole job. But a Mac isn't a phone. Your output might be routed to Bluetooth earbuds, the volume might be at zero, the system might be muted — and you'd never know until you slept through your morning.
 
-Matuta의 차별점은 여기다 — **울리지 않을 경우를 미리 제거하는 것.**
+That's the gap Matuta fills: **removing the reasons an alarm fails to wake you.**
 
-## 하는 일
+## What it does
 
-**절전에서 깨어난다.** 알람 2분 전에 전원 이벤트를 예약해 맥을 깨운다. 덮개를 닫아둬도 울린다.
+**It wakes your Mac from sleep.** Matuta schedules a power event two minutes before each alarm. Close the lid and it still rings.
 
-**어떤 음악으로든 깨운다.** 입력 칸 하나에 링크를 붙여넣거나 파일을 끌어다 놓으면 앱이 알아서 판별한다 — 내장 벨소리, 로컬 음악 파일, 인터넷 라디오, Apple Music, Spotify, YouTube·웹.
+**Any music source.** One field. Paste a link, drop a file, or type a song name — Matuta figures out what you gave it: built-in tones, local audio files, internet radio, Apple Music, Spotify, YouTube and the web.
 
-**소리가 안 나는 상황을 미리 막는다.** 알람 시각에 출력을 내장 스피커로 되돌리고, 음소거를 풀고, 볼륨을 확보한다. 외부 앱이나 웹으로 재생하는 소스는 검증할 수 없으므로 **백업음을 함께 깐다.** 무슨 일이 있어도 소리는 난다.
+**It clears the path before the alarm fires.** At alarm time it routes audio back to the built-in speakers, unmutes the system, and raises the volume. For sources it can't verify — an external app, a browser tab — it plays a **backup tone underneath.** Something always makes noise.
 
-**자기 전에 문제를 알려준다.** 나이트스탠드 모드 하단에 현재 상태가 뜬다. 이어폰이 꽂혀 있거나, 음소거이거나, 볼륨이 낮으면 주황색 경고와 함께 **한 번 눌러 고칠 수 있는 버튼**이 붙는다. 정상일 때는 조용하다.
+**It tells you what's wrong before you fall asleep.** The nightstand view shows your current state along the bottom. Earbuds plugged in, system muted, volume too low — each one turns amber with a **one-click fix.** When everything is fine, it stays quiet.
 
-**스페이스바 한 번으로 끈다.** 스누즈는 일부러 마우스로만 누르게 했다. 끄기는 쉽게, 다시 자기는 어렵게.
+**Spacebar to dismiss.** Snooze is deliberately mouse-only. Easy to turn off, harder to fall back asleep.
 
-## 설치
+**Korean and English.** Follows your system language by default; switch it in Settings (⌘,) and the whole app changes immediately — no restart.
 
-[릴리스 페이지](../../releases)에서 최신 `Matuta-1.0.0.zip`을 받아 압축을 풀고 `Matuta.app`을 응용 프로그램 폴더로 옮긴다.
+## Install
 
-Developer ID로 서명하고 Apple 공증을 받았으므로 경고 없이 열린다.
+Download the latest `Matuta-*.zip` from the [releases page](../../releases), unzip it, and drag `Matuta.app` into your Applications folder.
 
-### 처음 실행할 때
+The app is signed with a Developer ID and notarized by Apple, so it opens without warnings.
 
-Spotify나 Apple Music을 알람 소스로 쓰면 **"Matuta가 Spotify를 제어하도록 허용하시겠습니까?"** 대화상자가 뜬다. 허용해야 그 음악이 재생된다. 거부해도 백업음은 울리므로 늦잠을 자지는 않는다.
+### First launch
 
-나중에 바꾸려면 시스템 설정 → 개인정보 보호 및 보안 → 자동화에서 조정한다.
+If you pick Spotify or Apple Music as an alarm source, macOS will ask whether Matuta may control that app. You need to allow it for your music to play. If you decline, the backup tone still rings — you won't oversleep.
 
-## 소스에서 빌드
+To change your mind later: System Settings → Privacy & Security → Automation.
+
+## Build from source
 
 ```bash
-git clone <저장소 주소>
+git clone https://github.com/RAKKUNN/matuta.git
 cd matuta
-swift test          # 단위 테스트
-./Scripts/bundle.sh # build/Matuta.app 생성 (임시 서명)
+swift test           # unit tests
+./Scripts/bundle.sh  # builds build/Matuta.app (ad-hoc signed)
 open build/Matuta.app
 ```
 
-Xcode 프로젝트 파일이 없다. 순수 SwiftPM이라 전 과정이 터미널에서 재현된다.
+There's no Xcode project file. It's plain SwiftPM, so the whole process is reproducible from a terminal.
 
-배포판을 만들려면 Developer ID 인증서와 공증 자격증명이 필요하다.
+Building a distributable release needs a Developer ID certificate and notarization credentials:
 
 ```bash
-xcrun notarytool store-credentials matuta --apple-id <애플ID> --team-id <팀ID>
-./Scripts/release.sh   # 빌드 → 서명 → 공증 → 스테이플 → 검증
+xcrun notarytool store-credentials matuta --apple-id <apple-id> --team-id <team-id>
+./Scripts/release.sh   # build → sign → notarize → staple → verify
 ```
 
-## 구조
+## How it's put together
 
-순수 로직은 전부 `MatutaCore`에 있고 단위 테스트가 지킨다. 앱 레이어는 시스템 I/O와 화면만 담당한다.
+All decision-making and calculation lives in `MatutaCore` and is covered by unit tests. The app layer only handles system I/O and drawing.
 
 ```
-MatutaCore/            판정과 계산 (테스트 대상)
-├── NextOccurrence     다음 발생 시각
-├── Scheduler          다음 알람 선택 + 스누즈 반영
-├── AlarmStore         JSON 영속화
-├── PlaybackChain      소스 폴백 · 백업음 동시 재생
-├── PreflightEvaluator 사전 진단 판정
-├── OmniboxParser      입력 → 소스 판별
-└── TonePattern        알람음 파형 합성
+MatutaCore/            decisions and calculation (tested)
+├── NextOccurrence     when an alarm fires next
+├── Scheduler          picks the next alarm, accounts for snooze
+├── AlarmStore         JSON persistence
+├── PlaybackChain      source fallback, concurrent backup tone
+├── PreflightEvaluator pre-sleep diagnosis
+├── OmniboxParser      input → source type
+├── Localizer          Korean/English string catalog
+└── TonePattern        alarm tone synthesis
 
-Matuta/                시스템 I/O와 화면
-├── AudioGuard         출력 기기 · 볼륨 · 음소거
-├── SystemWakeScheduler 전원 이벤트 예약
-├── AutomationPermission 외부 앱 제어 권한
-└── Views/             SwiftUI 화면
+Matuta/                system I/O and UI
+├── AudioGuard         output device, volume, mute
+├── SystemWakeScheduler power event scheduling
+├── AutomationPermission external app control permission
+└── Views/             SwiftUI screens
 ```
 
-알람음은 오디오 파일이 아니라 **코드로 합성한다.** 파일이 없으니 파일이 사라져서 못 울릴 일도 없다.
+Two decisions worth calling out.
 
-## 문서
+**Alarm tones are synthesized in code, not shipped as audio files.** There's no file to go missing, so there's no way for the alarm to fail because an asset didn't load.
 
-| 문서 | 내용 |
+**The core never produces sentences.** It emits keys, and the view resolves them against the current language. That's what makes switching languages instant, and it means the core's tests assert on keys rather than on Korean prose — so rewording a message doesn't break them.
+
+## Docs
+
+Design notes are in Korean.
+
+| Document | Contents |
 |---|---|
-| [설계](docs/superpowers/specs/2026-09-02-macos-alarm-app-design.md) | 시장 조사, 포지셔닝, UI, 아키텍처, 범위 |
-| [코드 진단과 개선 기획](docs/superpowers/specs/2026-09-02-code-review-and-cleanup-plan.md) | 초기 구현의 문제와 개선 순서 |
-| [배포 전 검토](docs/superpowers/specs/2026-09-03-release-readiness-1.0.0.md) | 1.0.0 릴리스 점검 |
+| [Design](docs/superpowers/specs/2026-09-02-macos-alarm-app-design.md) | Market research, positioning, UI, architecture, scope |
+| [Code review & cleanup plan](docs/superpowers/specs/2026-09-02-code-review-and-cleanup-plan.md) | Problems in the first implementation and the order they were fixed |
+| [Release readiness](docs/superpowers/specs/2026-09-03-release-readiness-1.0.0.md) | 1.0.0 shipping checklist |
+| [Localization design](docs/superpowers/specs/2026-09-04-localization-design.md) | Korean/English in-app switching |
 
-## 하지 않기로 한 것
+## Deliberately not doing
 
-미션형 해제(수학 문제·사진 촬영), 범용 아침 자동화 런처, iOS 앱과 동기화, 테마 추가 확장(현재 6종에서 동결).
+Dismissal missions (math problems, photo tasks), a general-purpose morning automation runner, an iOS app or sync, and additional themes beyond the current six.
 
-## 라이선스
+## License
 
-MIT. 자세한 내용은 [LICENSE](LICENSE) 참고.
+MIT. See [LICENSE](LICENSE).
