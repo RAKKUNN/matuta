@@ -28,7 +28,7 @@
 
 <!-- ── Hero ─────────────────────────────────────────── -->
 <header class="hero" id="top">
-  <div class="glow" aria-hidden="true"></div>
+  <div class="glow-wrap" aria-hidden="true"><div class="glow"></div></div>
 
   <div class="hero-inner">
     <div class="clock" aria-hidden="true">
@@ -37,8 +37,7 @@
 
     <p class="next-alarm" id="next-alarm">
       <span class="dot"></span>
-      <span data-en="Next alarm 7:00 AM · rings even if the lid is closed"
-            data-ko="다음 알람 오전 7:00 · 덮개를 닫아도 울립니다"></span>
+      <span id="next-alarm-text"></span>
     </p>
 
     <h1 class="title" data-en="Matuta" data-ko="Matuta">Matuta</h1>
@@ -157,10 +156,12 @@
   <h2 class="section-title reveal"
       data-en="Easy to turn off. Harder to fall back asleep."
       data-ko="끄기는 쉽게. 다시 자기는 어렵게."></h2>
-  <div class="keycap reveal" aria-hidden="true">space</div>
+  <button class="keycap reveal" id="keycap" type="button"
+          data-en="space" data-ko="space">space</button>
+  <p class="dismissed" id="dismissed" aria-live="polite"></p>
   <p class="hint reveal"
-     data-en="Spacebar dismisses the alarm. Snooze is deliberately mouse-only."
-     data-ko="스페이스바로 알람을 끕니다. 스누즈는 일부러 마우스로만 누르게 했습니다."></p>
+     data-en="Spacebar dismisses the alarm. Snooze is deliberately mouse-only. Try it — press space."
+     data-ko="스페이스바로 알람을 끕니다. 스누즈는 일부러 마우스로만 누르게 했습니다. 눌러보세요."></p>
 </section>
 
 <!-- ── Download ─────────────────────────────────────── -->
