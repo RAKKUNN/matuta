@@ -16,6 +16,10 @@
 
 ---
 
+<p align="center">
+  <img src="docs/images/main.png" width="760" alt="Matuta main window">
+</p>
+
 ## Why
 
 The alarm in the built-in macOS Clock app has three holes in it.
@@ -41,6 +45,23 @@ That's the gap Matuta fills: **removing the reasons an alarm fails to wake you.*
 **Spacebar to dismiss.** Snooze is deliberately mouse-only. Easy to turn off, harder to fall back asleep.
 
 **Korean and English.** Follows your system language by default; switch it in Settings (⌘,) and the whole app changes immediately — no restart.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/nightstand.png" width="760" alt="Nightstand view">
+</p>
+<p align="center"><sub><i>Nightstand mode. The row along the bottom names anything that would keep the alarm from waking you — and each warning fixes itself in one click.</i></sub></p>
+
+<p align="center">
+  <img src="docs/images/edit.png" width="420" alt="Alarm editor">
+</p>
+<p align="center"><sub><i>One field takes a link, a dropped file, or a search. Matuta works out which kind of source it is.</i></sub></p>
+
+<p align="center">
+  <img src="docs/images/settings.png" width="480" alt="Settings">
+</p>
+<p align="center"><sub><i>Language switches without a restart.</i></sub></p>
 
 ## Install
 

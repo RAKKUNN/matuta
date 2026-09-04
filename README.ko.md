@@ -16,6 +16,10 @@
 
 ---
 
+<p align="center">
+  <img src="docs/images/main.png" width="760" alt="Matuta 메인 창">
+</p>
+
 ## 왜 만들었나
 
 macOS 기본 시계 앱의 알람에는 구멍이 세 개 있다.
@@ -41,6 +45,23 @@ Matuta의 차별점은 여기다 — **울리지 않을 경우를 미리 제거�
 **스페이스바 한 번으로 끈다.** 스누즈는 일부러 마우스로만 누르게 했다. 끄기는 쉽게, 다시 자기는 어렵게.
 
 **한국어와 영어를 지원한다.** 기본은 시스템 언어를 따르고, 설정(⌘,)에서 바꾸면 재시작 없이 앱 전체가 즉시 바뀐다.
+
+## 화면
+
+<p align="center">
+  <img src="docs/images/nightstand.png" width="760" alt="나이트스탠드">
+</p>
+<p align="center"><sub><i>나이트스탠드. 하단 줄이 알람을 방해할 만한 것을 짚어주고, 경고를 누르면 그 자리에서 고쳐진다.</i></sub></p>
+
+<p align="center">
+  <img src="docs/images/edit.png" width="420" alt="알람 편집">
+</p>
+<p align="center"><sub><i>칸 하나가 링크·파일·검색어를 모두 받는다. 어떤 소스인지는 앱이 판별한다.</i></sub></p>
+
+<p align="center">
+  <img src="docs/images/settings.png" width="480" alt="설정">
+</p>
+<p align="center"><sub><i>재시작 없이 언어가 바뀐다.</i></sub></p>
 
 ## 설치
 
