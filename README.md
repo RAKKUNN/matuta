@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  macOS 14.0+ · MIT License · <a href="README.ko.md">한국어</a>
+  <a href="https://rakkunn.github.io/matuta/"><b>Website</b></a> · macOS 14.0+ · MIT License · <a href="README.ko.md">한국어</a>
 </p>
 
 > *Mater Matuta* was the Roman goddess of the dawn and the morning light. The Latin *matutinus* ("of the morning") and the French *matin* both come from her name.

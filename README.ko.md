@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  macOS 14.0 이상 · MIT 라이선스 · <a href="README.md">English</a>
+  <a href="https://rakkunn.github.io/matuta/"><b>웹사이트</b></a> · macOS 14.0 이상 · MIT 라이선스 · <a href="README.md">English</a>
 </p>
 
 > *마테르 마투타*(Mater Matuta)는 로마 신화의 새벽과 아침빛의 여신이다. 라틴어 *matutinus*(아침의)와 프랑스어 *matin*이 이 어근에서 나왔다.
