@@ -1,10 +1,18 @@
-# Matuta
+<p align="center">
+  <img src="Resources/logo.png" width="120" alt="Matuta">
+</p>
 
-**A macOS alarm clock.** Wake up to any music you want — and stop worrying that it won't go off.
+<h1 align="center">Matuta</h1>
+
+<p align="center">
+  <b>A macOS alarm clock.</b> Wake up to any music you want — and stop worrying that it won't go off.
+</p>
+
+<p align="center">
+  macOS 14.0+ · MIT License · <a href="README.ko.md">한국어</a>
+</p>
 
 > *Mater Matuta* was the Roman goddess of the dawn and the morning light. The Latin *matutinus* ("of the morning") and the French *matin* both come from her name.
-
-macOS 14.0+ · MIT License · [한국어](README.ko.md)
 
 ---
 

@@ -1,10 +1,18 @@
-# Matuta
+<p align="center">
+  <img src="Resources/logo.png" width="120" alt="Matuta">
+</p>
 
-**macOS 알람 앱.** 원하는 음악으로 깨우고, 울리지 않을 이유를 미리 없앤다.
+<h1 align="center">Matuta</h1>
+
+<p align="center">
+  <b>macOS 알람 앱.</b> 원하는 음악으로 깨우고, 울리지 않을 이유를 미리 없앤다.
+</p>
+
+<p align="center">
+  macOS 14.0 이상 · MIT 라이선스 · <a href="README.md">English</a>
+</p>
 
 > *마테르 마투타*(Mater Matuta)는 로마 신화의 새벽과 아침빛의 여신이다. 라틴어 *matutinus*(아침의)와 프랑스어 *matin*이 이 어근에서 나왔다.
-
-macOS 14.0 이상 · MIT 라이선스 · [English](README.md)
 
 ---
 
