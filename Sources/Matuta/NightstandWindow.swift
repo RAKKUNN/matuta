@@ -52,6 +52,7 @@ final class NightstandController {
                     self?.hide()
                 }
             )
+            .environment(LanguageSetting.shared)
         )
 
         win.makeKeyAndOrderFront(nil)

@@ -1,10 +1,11 @@
 import SwiftUI
 import MatutaCore
 
-struct NightstandView: View {
+struct NightstandView: View, Localizable {
     let nextFireDate: Date?
     let nextAlarm: Alarm?
     let onDismiss: () -> Void
+    @Environment(LanguageSetting.self) var language
 
     @State private var now = Date()
     @State private var report: PreflightReport?
@@ -47,7 +48,7 @@ struct NightstandView: View {
                         Image(systemName: theme.themeIcon)
                             .font(.system(size: 13))
                             .foregroundStyle(theme.accent)
-                        Text(theme.rawValue.uppercased())
+                        Text(t(theme.localizedKey).uppercased())
                             .font(.system(size: 11, weight: .bold))
                             .tracking(1.5)
                             .foregroundStyle(Color.white.opacity(0.5))
@@ -55,7 +56,7 @@ struct NightstandView: View {
                     Spacer()
                     Button(action: onDismiss) {
                         HStack(spacing: 6) {
-                            Text("ESC")
+                            Text(t(.esc))
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2.5)
@@ -81,7 +82,7 @@ struct NightstandView: View {
 
                 // 대형 저자극 디지털 시계 (OLED 번인 방지 픽셀 시프트 적용)
                 VStack(spacing: 12) {
-                    Text(now, format: .dateTime.hour().minute())
+                    Text(now, format: .dateTime.hour().minute().locale(language.locale))
                         .font(.system(size: 136, weight: .ultraLight, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Color.white.opacity(0.92))
@@ -94,7 +95,7 @@ struct NightstandView: View {
                                 .font(.system(size: 12))
                                 .foregroundStyle(theme.accent)
 
-                            Text("다음 알람: \(next.formatted(date: .omitted, time: .shortened))")
+                            Text(t(.nextAlarmAt(next.formatted(.dateTime.hour().minute().locale(language.locale)))))
                                 .font(.system(size: 15, weight: .medium))
 
                             Text("·")
@@ -113,7 +114,7 @@ struct NightstandView: View {
                                 .overlay(Capsule().strokeBorder(Color.white.opacity(0.08), lineWidth: 1))
                         )
                     } else {
-                        Text("켜진 알람이 없습니다")
+                        Text(t(.noActiveAlarms))
                             .font(.system(size: 15, weight: .light))
                             .foregroundStyle(Color.white.opacity(0.35))
                     }
@@ -127,7 +128,7 @@ struct NightstandView: View {
                     // 1. 절전 방지 assertion 상태 (나이트스탠드 창이 열려 있는 동안 활성)
                     guardItem(
                         icon: "moon.stars.fill",
-                        label: "절전 방지 활성",
+                        label: t(.sleepPreventionActive),
                         severity: .info
                     )
 
@@ -135,7 +136,7 @@ struct NightstandView: View {
                     if let item = report?.outputDeviceBadge {
                         guardItem(
                             icon: item.icon,
-                            label: item.label,
+                            label: t(item.text),
                             severity: item.severity,
                             action: item.actionKind != nil ? { handleAction(item.actionKind!) } : nil
                         )
@@ -145,7 +146,7 @@ struct NightstandView: View {
                     if let item = report?.volumeGuardBadge {
                         guardItem(
                             icon: item.icon,
-                            label: item.label,
+                            label: t(item.text),
                             severity: item.severity,
                             action: item.actionKind != nil ? { handleAction(item.actionKind!) } : nil
                         )
@@ -256,9 +257,11 @@ struct NightstandView: View {
         let hours = diff / 3600
         let minutes = (diff % 3600) / 60
         if hours > 0 {
-            return "\(hours)시간 \(minutes)분 후 울림"
+            return t(.alarmCountdownHoursMinutes(hours: hours, minutes: minutes))
+        } else if minutes > 0 {
+            return t(.alarmCountdownMinutes(minutes: minutes))
         } else {
-            return "\(minutes)분 후 울림"
+            return t(.alarmCountdownSoon)
         }
     }
 }

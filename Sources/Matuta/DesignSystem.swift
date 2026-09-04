@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import MatutaCore
 
 // MARK: - Matuta Cozy & Warm Design System
 
@@ -12,6 +13,17 @@ public enum CozyTheme: String, CaseIterable, Identifiable, Sendable {
     case cedar = "원목 (드립 커피)"
 
     public var id: String { rawValue }
+
+    public var localizedKey: LocalizedText {
+        switch self {
+        case .midnight: return .themeMidnight
+        case .oat:      return .themeOat
+        case .matcha:   return .themeMatcha
+        case .sunset:   return .themeSunset
+        case .lavender: return .themeLavender
+        case .cedar:    return .themeCedar
+        }
+    }
 
     public var isLight: Bool {
         self == .oat

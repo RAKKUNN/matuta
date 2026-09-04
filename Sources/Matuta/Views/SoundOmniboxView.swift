@@ -3,9 +3,10 @@ import AppKit
 import UniformTypeIdentifiers
 import MatutaCore
 
-struct SoundOmniboxView: View {
+struct SoundOmniboxView: View, Localizable {
     @Binding var soundRef: SoundSourceRef
     let theme: CozyTheme
+    @Environment(LanguageSetting.self) var language
 
     @State private var omniboxText: String = ""
     @State private var isShowingBrowseDrawer: Bool = false
@@ -17,7 +18,7 @@ struct SoundOmniboxView: View {
         VStack(alignment: .leading, spacing: 10) {
             // 헤더
             HStack {
-                Text("무엇으로 깨울까요")
+                Text(t(.wakeSoundPrompt))
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(theme.textSecondary)
 
@@ -31,7 +32,7 @@ struct SoundOmniboxView: View {
                     HStack(spacing: 4) {
                         Image(systemName: isShowingBrowseDrawer ? "chevron.up" : "folder.fill")
                             .font(.system(size: 10))
-                        Text(isShowingBrowseDrawer ? "접기" : "벨소리 / 파일 찾아보기")
+                        Text(isShowingBrowseDrawer ? t(.collapse) : t(.browseTonesAndFiles))
                             .font(.system(size: 11, weight: .semibold))
                     }
                     .foregroundStyle(theme.accent)
@@ -45,7 +46,7 @@ struct SoundOmniboxView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(theme.textTertiary)
 
-                TextField("Spotify 링크, YouTube URL, 라디오 주소 또는 파일 경로", text: $omniboxText)
+                TextField(t(.omniboxPlaceholder), text: $omniboxText)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12))
                     .foregroundStyle(theme.textPrimary)
@@ -56,7 +57,7 @@ struct SoundOmniboxView: View {
                     }
 
                 if let clipboard = NSPasteboard.general.string(forType: .string), !clipboard.isEmpty && clipboard != omniboxText {
-                    Button("붙여넣기") {
+                    Button(t(.paste)) {
                         omniboxText = clipboard
                         self.soundRef = OmniboxParser.parse(text: clipboard)
                     }
@@ -125,7 +126,7 @@ struct SoundOmniboxView: View {
                     HStack(spacing: 4) {
                         Image(systemName: isPreviewing ? "stop.fill" : "play.fill")
                             .font(.system(size: 9))
-                        Text(isPreviewing ? "정지" : "미리듣기")
+                        Text(isPreviewing ? t(.stop) : t(.preview))
                             .font(.system(size: 10, weight: .bold))
                     }
                     .foregroundStyle(isPreviewing ? Color.white : theme.textPrimary)
@@ -148,7 +149,7 @@ struct SoundOmniboxView: View {
         HStack(spacing: 6) {
             presetChip("Morning Harp", source: .builtIn(.morningHarp), icon: "bell.fill")
             presetChip("Warm Rhodes", source: .builtIn(.warmRhodes), icon: "bell.fill")
-            presetChip("Lofi Girl (웹)", source: .web(URL(string: "https://www.youtube.com/watch?v=jfKfPfyJRdk")!), icon: "play.rectangle.fill")
+            presetChip(language.resolved == .korean ? "Lofi Girl (웹)" : "Lofi Girl (Web)", source: .web(URL(string: "https://www.youtube.com/watch?v=jfKfPfyJRdk")!), icon: "play.rectangle.fill")
             presetChip("Spotify Top 50", source: .spotify(uri: "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"), icon: "waveform")
         }
     }
@@ -179,7 +180,7 @@ struct SoundOmniboxView: View {
     private var browseDrawerSection: some View {
         VStack(spacing: 10) {
             HStack {
-                Text("내장 벨소리:")
+                Text(t(.builtInToneColon))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(theme.textSecondary)
 
@@ -201,7 +202,7 @@ struct SoundOmniboxView: View {
 
                 Spacer()
 
-                Button("로컬 파일 선택...") {
+                Button(t(.chooseLocalFile)) {
                     selectLocalFile()
                 }
                 .buttonStyle(.plain)
@@ -244,12 +245,12 @@ struct SoundOmniboxView: View {
 
     private var sourceCategoryTitle: String {
         switch soundRef {
-        case .builtIn: return "내장 사운드스케이프"
-        case .localFile: return "로컬 음악 파일"
-        case .streamURL: return "라디오 스트림"
-        case .appleMusic: return "Apple Music"
-        case .spotify: return "Spotify (백업음 보호)"
-        case .web: return "웹 스트림 (백업음 보호)"
+        case .builtIn: return t(.builtInTones)
+        case .localFile: return t(.localAudioFile)
+        case .streamURL: return t(.streamRadio)
+        case .appleMusic: return t(.appleMusic)
+        case .spotify: return t(.spotifyWithBackup)
+        case .web: return t(.webWithBackup)
         }
     }
 
@@ -261,7 +262,7 @@ struct SoundOmniboxView: View {
             if let url = LocalFileSource.resolve(bookmark: bookmark) {
                 return url.lastPathComponent
             }
-            return "음악 파일"
+            return t(.localAudioFile)
         case .streamURL(let url):
             return url.host ?? url.absoluteString
         case .appleMusic(let id):

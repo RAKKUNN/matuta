@@ -129,22 +129,34 @@ extension Localizer {
             case .english: return "Options"
             }
 
+        case .volumeLabel:
+            switch language {
+            case .korean: return "볼륨"
+            case .english: return "Volume"
+            }
+
         case .alarmName:
             switch language {
-            case .korean: return "알람 이름"
-            case .english: return "Alarm Label"
+            case .korean: return "라벨"
+            case .english: return "Label"
             }
 
         case .alarmNamePlaceholder:
             switch language {
-            case .korean: return "예: 기상, 아침 운동"
-            case .english: return "e.g. Wake up, Morning run"
+            case .korean: return "알람 이름 (예: 상쾌한 아침, 커피 타임, 출근)"
+            case .english: return "Alarm label (e.g. Wake up, Coffee time)"
             }
 
         case .snooze:
             switch language {
             case .korean: return "스누즈"
             case .english: return "Snooze"
+            }
+
+        case .snoozeDescription:
+            switch language {
+            case .korean: return "알람 울릴 때 9분 뒤 다시 울림 허용"
+            case .english: return "Allows ringing again in 9 minutes"
             }
 
         case .minutes(let m):
@@ -155,14 +167,14 @@ extension Localizer {
 
         case .gradualVolume:
             switch language {
-            case .korean: return "볼륨 서서히 키우기"
+            case .korean: return "서서히 커지기 (점진적 페이드인)"
             case .english: return "Gradual Volume"
             }
 
         case .gradualVolumeDescription:
             switch language {
-            case .korean: return "부드럽게 깨워줍니다"
-            case .english: return "Wakes you up gently"
+            case .korean: return "낮은 볼륨에서 설정 볼륨까지 30초간 부드럽게 상승"
+            case .english: return "Gently ramps up from low volume over 30s"
             }
 
         case .nextAlarm:

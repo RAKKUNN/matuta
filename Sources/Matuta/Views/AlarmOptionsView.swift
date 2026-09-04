@@ -1,12 +1,13 @@
 import SwiftUI
 import MatutaCore
 
-struct AlarmOptionsView: View {
+struct AlarmOptionsView: View, Localizable {
     @Binding var label: String?
     @Binding var volume: Double
     @Binding var fadeIn: Bool
     @Binding var snoozeMinutes: Int?
     let theme: CozyTheme
+    @Environment(LanguageSetting.self) var language
 
     @State private var lastVolumeFeedbackTime = Date()
     @State private var feedbackPlayer = TonePlayer()
@@ -15,11 +16,11 @@ struct AlarmOptionsView: View {
         VStack(spacing: 14) {
             // 라벨 입력
             VStack(alignment: .leading, spacing: 6) {
-                Text("라벨")
+                Text(t(.alarmName))
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(theme.textSecondary)
 
-                TextField("알람 이름 (예: 상쾌한 아침, 커피 타임, 출근)", text: Binding(
+                TextField(t(.alarmNamePlaceholder), text: Binding(
                     get: { label ?? "" },
                     set: { label = $0.isEmpty ? nil : $0 }
                 ))
@@ -39,7 +40,7 @@ struct AlarmOptionsView: View {
             // 볼륨 슬라이더
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("볼륨")
+                    Text(t(.volumeLabel))
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(theme.textSecondary)
 
@@ -83,10 +84,10 @@ struct AlarmOptionsView: View {
             VStack(spacing: 12) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("서서히 커지기 (점진적 페이드인)")
+                        Text(t(.gradualVolume))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(theme.textPrimary)
-                        Text("낮은 볼륨에서 설정 볼륨까지 30초간 부드럽게 상승")
+                        Text(t(.gradualVolumeDescription))
                             .font(.system(size: 10))
                             .foregroundStyle(theme.textTertiary)
                     }
@@ -98,10 +99,10 @@ struct AlarmOptionsView: View {
 
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("스누즈 (9분)")
+                        Text(t(.snoozeWithMinutes(9)))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(theme.textPrimary)
-                        Text("알람 울릴 때 9분 뒤 다시 울림 허용")
+                        Text(t(.snoozeDescription))
                             .font(.system(size: 10))
                             .foregroundStyle(theme.textTertiary)
                     }

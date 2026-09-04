@@ -23,7 +23,7 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSAppleEventsUsageDescription</key>
-    <string>알람 시각에 Spotify나 음악 앱에서 선택하신 곡을 재생하기 위해 필요합니다.</string>
+    <string>알람 시각에 선택하신 음악을 재생하기 위해 필요합니다. / Needed to play your chosen music at alarm time.</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
     <key>NSHumanReadableCopyright</key>

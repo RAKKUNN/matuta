@@ -49,9 +49,11 @@ public enum LocalizedText: Sendable, Equatable, Hashable {
     case repeatLabel
     case soundLabel
     case optionsLabel
+    case volumeLabel
     case alarmName
     case alarmNamePlaceholder
     case snooze
+    case snoozeDescription
     case minutes(Int)
     case gradualVolume
     case gradualVolumeDescription
@@ -71,25 +73,40 @@ public enum LocalizedText: Sendable, Equatable, Hashable {
     case alarmCountdownHoursMinutes(hours: Int, minutes: Int)
     case alarmCountdownMinutes(minutes: Int)
     case alarmCountdownSoon
+    case remaining(String)
     case dismissAlarm
     case dismissAlarmSpace
     case snoozeWithMinutes(Int)
     case pressSpaceToDismiss
     case alarmFiring
     case openApp
+    case openAlarmsWindow
     case nightstand
     case quit
     case esc
+    case noActiveAlarmsShort
+    case quickNap20
+    case quickNap45
+    case quickNap60
 
     // MARK: - Omnibox & Audio Sources
+    case wakeSoundPrompt
+    case collapse
+    case browseTonesAndFiles
     case omniboxPlaceholder
+    case paste
     case builtInTones
+    case builtInToneColon
     case localFile
+    case localAudio
     case localAudioFile
+    case chooseLocalFile
     case streamRadio
     case spotify
+    case spotifyWithBackup
     case appleMusic
     case webAudio
+    case webWithBackup
     case chooseFile
     case preview
     case stop

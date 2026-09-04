@@ -60,6 +60,7 @@ final class AlarmOverlayController {
                     onDismiss: onDismiss,
                     onSnooze: onSnooze
                 )
+                .environment(LanguageSetting.shared)
             )
             window.makeKeyAndOrderFront(nil)
             windows.append(window)

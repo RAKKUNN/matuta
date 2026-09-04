@@ -1,8 +1,9 @@
 import SwiftUI
 import MatutaCore
 
-struct AlarmListView: View {
+struct AlarmListView: View, Localizable {
     @Bindable var model: AlarmListModel
+    @Environment(LanguageSetting.self) var language
     @State private var preflightReport: PreflightReport?
     private let tick = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
@@ -108,11 +109,11 @@ struct AlarmListView: View {
                 }
 
                 if let next = model.nextFireDate {
-                    Text("다음 알람 \(next.formatted(date: .omitted, time: .shortened))")
+                    Text(t(.nextAlarmAt(next.formatted(.dateTime.hour().minute().locale(language.locale)))))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.textPrimary)
                 } else {
-                    Text("켜진 알람 없음")
+                    Text(t(.noActiveAlarmsShort))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(theme.textSecondary)
                 }
@@ -123,16 +124,16 @@ struct AlarmListView: View {
             HStack(spacing: 8) {
                 // 테마 선택 메뉴 (6종 Cozy 테마)
                 Menu {
-                    ForEach(CozyTheme.allCases) { t in
+                    ForEach(CozyTheme.allCases) { tTheme in
                         Button {
                             withAnimation(.easeInOut(duration: 0.25)) {
-                                ThemeManager.shared.current = t
+                                ThemeManager.shared.current = tTheme
                             }
                         } label: {
                             HStack {
-                                Image(systemName: t.themeIcon)
-                                Text(t.rawValue)
-                                if ThemeManager.shared.current == t {
+                                Image(systemName: tTheme.themeIcon)
+                                Text(t(tTheme.localizedKey))
+                                if ThemeManager.shared.current == tTheme {
                                     Image(systemName: "checkmark")
                                 }
                             }
@@ -149,7 +150,6 @@ struct AlarmListView: View {
                 }
                 .menuStyle(.borderlessButton)
                 .frame(width: 34, height: 34)
-                .help("포근한 6종 테마 변경")
 
                 // 나이트스탠드 버튼
                 Button(action: { model.openNightstand() }) {
@@ -162,7 +162,7 @@ struct AlarmListView: View {
                         .overlay(Circle().strokeBorder(theme.subtleStroke, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
-                .help("나이트스탠드 (전체화면 침대 시계)")
+                .help(t(.nightstand))
 
                 // 새 알람 추가 버튼
                 Button(action: { model.addAlarm() }) {
@@ -174,7 +174,7 @@ struct AlarmListView: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .help("새 알람 만들기")
+                .help(t(.addAlarm))
             }
         }
     }
@@ -183,9 +183,9 @@ struct AlarmListView: View {
 
     private var quickNapBar: some View {
         HStack(spacing: 8) {
-            quickNapChip(title: "20분 낮잠", minutes: 20, icon: "cup.and.saucer.fill")
-            quickNapChip(title: "45분 집중", minutes: 45, icon: "book.fill")
-            quickNapChip(title: "1시간 숙면", minutes: 60, icon: "moon.zzz.fill")
+            quickNapChip(title: t(.quickNap20), minutes: 20, icon: "cup.and.saucer.fill")
+            quickNapChip(title: t(.quickNap45), minutes: 45, icon: "book.fill")
+            quickNapChip(title: t(.quickNap60), minutes: 60, icon: "moon.zzz.fill")
             Spacer()
         }
     }
@@ -239,7 +239,7 @@ struct AlarmListView: View {
                 .font(.system(size: 44, weight: .ultraLight))
                 .foregroundStyle(theme.textTertiary)
 
-            Text("설정된 알람이 없습니다")
+            Text(t(.noAlarms))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(theme.textSecondary)
 
@@ -247,7 +247,7 @@ struct AlarmListView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
                         .font(.system(size: 11, weight: .bold))
-                    Text("첫 알람 만들기")
+                    Text(t(.addAlarm))
                         .font(.system(size: 13, weight: .semibold))
                 }
                 .padding(.horizontal, 16)
@@ -273,7 +273,7 @@ struct AlarmListView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
                         .font(.system(size: 11, weight: .bold))
-                    Text("알람 추가")
+                    Text(t(.addAlarm))
                         .font(.system(size: 13, weight: .bold))
                 }
                 .padding(.horizontal, 15)
@@ -297,7 +297,7 @@ struct AlarmListView: View {
                 }) {
                     HStack(spacing: 5) {
                         Image(systemName: warning.icon)
-                        Text(warning.actionLabel != nil ? "\(warning.message) → \(warning.actionLabel!)" : warning.message)
+                        Text(warning.actionText != nil ? "\(t(warning.text)) → \(t(warning.actionText!))" : t(warning.text))
                     }
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Color.orange)
@@ -307,7 +307,7 @@ struct AlarmListView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .disabled(warning.actionLabel == nil)
+                .disabled(warning.actionText == nil)
             } else if let info = report.primaryInfo {
                 // 단순 안내(Info, 예: 이어폰 연결): 문제 상태가 아니므로 중립적인 테마 색상으로 표시
                 Button(action: {
@@ -315,7 +315,7 @@ struct AlarmListView: View {
                 }) {
                     HStack(spacing: 5) {
                         Image(systemName: info.icon)
-                        Text(info.actionLabel != nil ? "\(info.message) → \(info.actionLabel!)" : info.message)
+                        Text(info.actionText != nil ? "\(t(info.text)) → \(t(info.actionText!))" : t(info.text))
                     }
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(theme.textSecondary)
@@ -325,20 +325,20 @@ struct AlarmListView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .disabled(info.actionLabel == nil)
+                .disabled(info.actionText == nil)
             } else {
                 // 완전 정상
                 HStack(spacing: 6) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 11))
                         .foregroundStyle(theme.accent)
-                    Text("스피커 · 볼륨 \(Int(report.audio.volume * 100))%")
+                    Text(t(.speakerStatus(volume: Int(report.audio.volume * 100))))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(theme.textSecondary)
                 }
             }
         } else {
-            Text("\(model.alarms.count)개의 알람")
+            Text(t(.alarmCount(model.alarms.count)))
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(theme.textTertiary)
         }
@@ -361,7 +361,7 @@ struct AlarmListView: View {
 
 // MARK: - 아티잔 알람 카드 & 마이크로 인터랙션
 
-private struct ArtisanAlarmCard: View {
+private struct ArtisanAlarmCard: View, Localizable {
     let alarm: Alarm
     let isSnoozing: Bool
     let snoozeUntil: Date?
@@ -369,6 +369,7 @@ private struct ArtisanAlarmCard: View {
     let onToggle: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    @Environment(LanguageSetting.self) var language
 
     @State private var isHovered = false
     @State private var now = Date()
@@ -387,7 +388,7 @@ private struct ArtisanAlarmCard: View {
                     HStack(spacing: 5) {
                         Image(systemName: "moon.zzz.fill")
                             .font(.system(size: 10))
-                        Text("스누즈 진행 중 · \(countdownText(to: until))")
+                        Text("\(t(.snoozing)) · \(countdownText(to: until))")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
                     }
                     .foregroundStyle(theme.accent)
@@ -395,7 +396,7 @@ private struct ArtisanAlarmCard: View {
                     Spacer()
 
                     Button(action: onCancelSnooze) {
-                        Text("취소")
+                        Text(t(.cancel))
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(theme.textSecondary)
                             .padding(.horizontal, 6)
@@ -426,7 +427,7 @@ private struct ArtisanAlarmCard: View {
                     HStack(spacing: 3.5) {
                         ForEach(Weekday.displayOrder, id: \.self) { day in
                             let isActive = alarm.weekdays.contains(day)
-                            Text(day.shortName)
+                            Text(t(day.shortNameText))
                                 .font(.system(size: 9, weight: isActive ? .bold : .medium))
                                 .frame(width: 18, height: 18)
                                 .background(isActive ? (alarm.isEnabled ? theme.accent : Color.gray.opacity(0.2)) : Color.clear)
@@ -435,7 +436,7 @@ private struct ArtisanAlarmCard: View {
                         }
 
                         if alarm.weekdays.isEmpty {
-                            Text("1회성")
+                            Text(t(.once))
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundStyle(theme.textTertiary)
                                 .padding(.leading, 4)
@@ -467,7 +468,7 @@ private struct ArtisanAlarmCard: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
-                    .help("알람 편집")
+                    .help(t(.editAlarm))
 
                     Button(action: onDelete) {
                         Image(systemName: "trash")
@@ -478,7 +479,7 @@ private struct ArtisanAlarmCard: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
-                    .help("알람 삭제")
+                    .help(t(.delete))
                 }
                 .opacity(isHovered ? 1 : 0)
                 .animation(.easeInOut(duration: 0.18), value: isHovered)
@@ -504,9 +505,9 @@ private struct ArtisanAlarmCard: View {
         .onHover { isHovered = $0 }
         .onReceive(timer) { now = $0 }
         .contextMenu {
-            Button("편집...") { onEdit() }
+            Button(t(.edit)) { onEdit() }
             Divider()
-            Button("삭제", role: .destructive) { onDelete() }
+            Button(t(.delete), role: .destructive) { onDelete() }
         }
     }
 
@@ -516,7 +517,7 @@ private struct ArtisanAlarmCard: View {
     }
 
     private var periodString: String {
-        alarm.hour < 12 ? "AM" : "PM"
+        alarm.hour < 12 ? t(.am) : t(.pm)
     }
 
     private var sourcePill: some View {
@@ -559,15 +560,15 @@ private struct ArtisanAlarmCard: View {
             if let url = LocalFileSource.resolve(bookmark: bookmark) {
                 return url.lastPathComponent
             }
-            return "음악 파일"
+            return t(.localAudioFile)
         case .streamURL(let url):
-            return url.host ?? "라디오"
+            return url.host ?? t(.streamRadio)
         case .appleMusic:
             return "Apple Music"
         case .spotify:
             return "Spotify"
         case .web(let url):
-            return url.host ?? "웹"
+            return url.host ?? t(.webAudio)
         }
     }
 
@@ -575,6 +576,6 @@ private struct ArtisanAlarmCard: View {
         let diff = max(0, Int(date.timeIntervalSince(now)))
         let minutes = diff / 60
         let seconds = diff % 60
-        return String(format: "%02d:%02d 남음", minutes, seconds)
+        return t(.remaining(String(format: "%02d:%02d", minutes, seconds)))
     }
 }

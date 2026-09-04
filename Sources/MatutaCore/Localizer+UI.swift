@@ -69,6 +69,12 @@ extension Localizer {
             case .english: return "Rings soon"
             }
 
+        case .remaining(let time):
+            switch language {
+            case .korean: return "\(time) 남음"
+            case .english: return "\(time) left"
+            }
+
         case .dismissAlarm:
             switch language {
             case .korean: return "알람 끄기"
@@ -105,6 +111,12 @@ extension Localizer {
             case .english: return "Open Matuta"
             }
 
+        case .openAlarmsWindow:
+            switch language {
+            case .korean: return "알람 창 열기"
+            case .english: return "Open Alarms Window"
+            }
+
         case .nightstand:
             switch language {
             case .korean: return "나이트스탠드"
@@ -120,10 +132,58 @@ extension Localizer {
         case .esc:
             return "ESC"
 
+        case .noActiveAlarmsShort:
+            switch language {
+            case .korean: return "켜진 알람 없음"
+            case .english: return "No Alarms On"
+            }
+
+        case .quickNap20:
+            switch language {
+            case .korean: return "20분 낮잠"
+            case .english: return "20m Nap"
+            }
+
+        case .quickNap45:
+            switch language {
+            case .korean: return "45분 집중"
+            case .english: return "45m Focus"
+            }
+
+        case .quickNap60:
+            switch language {
+            case .korean: return "1시간 숙면"
+            case .english: return "1h Sleep"
+            }
+
+        case .wakeSoundPrompt:
+            switch language {
+            case .korean: return "무엇으로 깨울까요"
+            case .english: return "Wake up sound"
+            }
+
+        case .collapse:
+            switch language {
+            case .korean: return "접기"
+            case .english: return "Collapse"
+            }
+
+        case .browseTonesAndFiles:
+            switch language {
+            case .korean: return "벨소리 / 파일 찾아보기"
+            case .english: return "Browse tones & files"
+            }
+
         case .omniboxPlaceholder:
             switch language {
             case .korean: return "사운드 검색 또는 URL/경로 붙여넣기"
             case .english: return "Search tones, paste URL or file path..."
+            }
+
+        case .paste:
+            switch language {
+            case .korean: return "붙여넣기"
+            case .english: return "Paste"
             }
 
         case .builtInTones:
@@ -132,10 +192,22 @@ extension Localizer {
             case .english: return "Built-in Tones"
             }
 
+        case .builtInToneColon:
+            switch language {
+            case .korean: return "내장 벨소리:"
+            case .english: return "Built-in Tone:"
+            }
+
         case .localFile:
             switch language {
             case .korean: return "로컬 파일"
             case .english: return "Local File"
+            }
+
+        case .localAudio:
+            switch language {
+            case .korean: return "로컬 오디오"
+            case .english: return "Local Audio"
             }
 
         case .localAudioFile:
@@ -144,14 +216,26 @@ extension Localizer {
             case .english: return "Audio File"
             }
 
+        case .chooseLocalFile:
+            switch language {
+            case .korean: return "로컬 파일 선택..."
+            case .english: return "Choose Local File..."
+            }
+
         case .streamRadio:
             switch language {
-            case .korean: return "라디오"
-            case .english: return "Radio Stream"
+            case .korean: return "스트림 라디오"
+            case .english: return "Stream Radio"
             }
 
         case .spotify:
             return "Spotify"
+
+        case .spotifyWithBackup:
+            switch language {
+            case .korean: return "Spotify (백업음 보호)"
+            case .english: return "Spotify (Backup tone)"
+            }
 
         case .appleMusic:
             return "Apple Music"
@@ -160,6 +244,12 @@ extension Localizer {
             switch language {
             case .korean: return "웹"
             case .english: return "Web"
+            }
+
+        case .webWithBackup:
+            switch language {
+            case .korean: return "웹 스트림 (백업음 보호)"
+            case .english: return "Web Stream (Backup tone)"
             }
 
         case .chooseFile:

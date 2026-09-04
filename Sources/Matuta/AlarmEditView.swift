@@ -1,10 +1,11 @@
 import SwiftUI
 import MatutaCore
 
-struct AlarmEditView: View {
+struct AlarmEditView: View, Localizable {
     @State private var alarm: Alarm
     @State private var isPM: Bool = false
     @State private var hour12: Int = 7
+    @Environment(LanguageSetting.self) var language
 
     private let onSave: (Alarm) -> Void
     private let onCancel: () -> Void
@@ -73,7 +74,7 @@ struct AlarmEditView: View {
 
     private var headerBar: some View {
         HStack {
-            Button("취소") {
+            Button(t(.cancel)) {
                 onCancel()
             }
             .buttonStyle(.plain)
@@ -82,13 +83,13 @@ struct AlarmEditView: View {
 
             Spacer()
 
-            Text("알람 설정")
+            Text(t(.editAlarm))
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(theme.textPrimary)
 
             Spacer()
 
-            Button("저장") {
+            Button(t(.save)) {
                 syncTime24()
                 onSave(alarm)
             }

@@ -2,11 +2,12 @@ import SwiftUI
 import AppKit
 import MatutaCore
 
-struct TimePickerView: View {
+struct TimePickerView: View, Localizable {
     @Binding var hour12: Int
     @Binding var minute: Int
     @Binding var isPM: Bool
     let theme: CozyTheme
+    @Environment(LanguageSetting.self) var language
 
     @FocusState private var focusedField: TimeFieldFocus?
     @State private var hourBuffer = TimeInputBuffer()
@@ -64,7 +65,7 @@ struct TimePickerView: View {
                             isPM = false
                         }
                     }) {
-                        Text("AM")
+                        Text(t(.am))
                             .font(.system(size: 12, weight: !isPM ? .bold : .medium))
                             .frame(width: 46, height: 28)
                             .background(!isPM ? theme.accent : (theme.isLight ? Color.black.opacity(0.06) : Color.white.opacity(0.06)))
@@ -78,7 +79,7 @@ struct TimePickerView: View {
                             isPM = true
                         }
                     }) {
-                        Text("PM")
+                        Text(t(.pm))
                             .font(.system(size: 12, weight: isPM ? .bold : .medium))
                             .frame(width: 46, height: 28)
                             .background(isPM ? theme.accent : (theme.isLight ? Color.black.opacity(0.06) : Color.white.opacity(0.06)))

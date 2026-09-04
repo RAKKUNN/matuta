@@ -28,20 +28,28 @@ struct MatutaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @Environment(\.openWindow) private var openWindow
     @State private var model = AlarmListModel()
+    @State private var languageSetting = LanguageSetting.shared
 
     var body: some Scene {
         Window("Matuta", id: "alarms") {
             AlarmListView(model: model)
+                .environment(languageSetting)
         }
         .defaultSize(width: 440, height: 600)
         .windowResizability(.contentSize)
 
         MenuBarExtra {
             MenuBarPopoverView(model: model)
+                .environment(languageSetting)
         } label: {
             menuBarLabel
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView(language: languageSetting)
+                .environment(languageSetting)
+        }
     }
 
     @ViewBuilder
@@ -49,12 +57,12 @@ struct MatutaApp: App {
         if model.firing != nil {
             HStack(spacing: 3) {
                 Image(systemName: "bell.and.waveform.fill")
-                Text("알람 울림")
+                Text(Localizer.string(.alarmFiring, languageSetting.resolved))
             }
         } else if let next = model.nextFireDate {
             HStack(spacing: 3) {
                 Image(systemName: "alarm.fill")
-                Text(next.formatted(date: .omitted, time: .shortened))
+                Text(next.formatted(.dateTime.hour().minute().locale(languageSetting.locale)))
             }
         } else {
             Image(systemName: "alarm")
@@ -64,8 +72,9 @@ struct MatutaApp: App {
 
 // MARK: - Raycast/Dato 스타일 대화형 메뉴바 팝오버 뷰
 
-private struct MenuBarPopoverView: View {
+private struct MenuBarPopoverView: View, Localizable {
     @Bindable var model: AlarmListModel
+    @Environment(LanguageSetting.self) var language
     @Environment(\.openWindow) private var openWindow
 
     private var theme: CozyTheme {
@@ -80,7 +89,7 @@ private struct MenuBarPopoverView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 14, weight: .bold))
-                        Text("알람 끄기 (Space)")
+                        Text(t(.dismissAlarmSpace))
                             .font(.system(size: 13, weight: .bold))
                     }
                     .frame(maxWidth: .infinity)
@@ -96,18 +105,18 @@ private struct MenuBarPopoverView: View {
             // 다음 알람 카드 & 토글 스위치
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("다음 알람")
+                    Text(t(.nextAlarm))
                         .font(.system(size: 10, weight: .bold))
                         .textCase(.uppercase)
                         .foregroundStyle(theme.textTertiary)
 
                     if let next = model.nextFireDate {
-                        Text(next.formatted(date: .omitted, time: .shortened))
+                        Text(next.formatted(.dateTime.hour().minute().locale(language.locale)))
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .monospacedDigit()
                             .foregroundStyle(theme.textPrimary)
                     } else {
-                        Text("켜진 알람 없음")
+                        Text(t(.noActiveAlarmsShort))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(theme.textSecondary)
                     }
@@ -132,9 +141,9 @@ private struct MenuBarPopoverView: View {
 
             // 원터치 퀵 낮잠 칩
             HStack(spacing: 6) {
-                quickNapButton(label: "20분 낮잠", minutes: 20, icon: "cup.and.saucer.fill")
-                quickNapButton(label: "45분 집중", minutes: 45, icon: "book.fill")
-                quickNapButton(label: "1시간 숙면", minutes: 60, icon: "moon.zzz.fill")
+                quickNapButton(textKey: .quickNap20, minutes: 20, icon: "cup.and.saucer.fill")
+                quickNapButton(textKey: .quickNap45, minutes: 45, icon: "book.fill")
+                quickNapButton(textKey: .quickNap60, minutes: 60, icon: "moon.zzz.fill")
             }
 
             Divider().opacity(theme.isLight ? 0.08 : 0.12)
@@ -148,7 +157,7 @@ private struct MenuBarPopoverView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "clock.fill")
                             .font(.system(size: 10))
-                        Text("알람 창 열기")
+                        Text(t(.openAlarmsWindow))
                             .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundStyle(theme.textSecondary)
@@ -163,7 +172,7 @@ private struct MenuBarPopoverView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "moon.fill")
                             .font(.system(size: 10))
-                        Text("나이트스탠드")
+                        Text(t(.nightstand))
                             .font(.system(size: 12, weight: .medium))
                     }
                     .foregroundStyle(theme.accent)
@@ -172,7 +181,7 @@ private struct MenuBarPopoverView: View {
 
                 Spacer()
 
-                Button("종료") {
+                Button(t(.quit)) {
                     NSApplication.shared.terminate(nil)
                 }
                 .buttonStyle(.plain)
@@ -185,12 +194,13 @@ private struct MenuBarPopoverView: View {
         .background(theme.baseBackground)
     }
 
-    private func quickNapButton(label: String, minutes: Int, icon: String) -> some View {
+    private func quickNapButton(textKey: LocalizedText, minutes: Int, icon: String) -> some View {
         Button(action: {
             let target = Date().addingTimeInterval(Double(minutes) * 60)
             let calendar = Calendar.current
             let h = calendar.component(.hour, from: target)
             let m = calendar.component(.minute, from: target)
+            let label = t(textKey)
             let alarm = Alarm(
                 hour: h,
                 minute: m,
@@ -207,7 +217,7 @@ private struct MenuBarPopoverView: View {
             HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 9))
-                Text(label)
+                Text(t(textKey))
                     .font(.system(size: 10, weight: .medium))
             }
             .foregroundStyle(theme.textSecondary)

@@ -1,24 +1,25 @@
 import SwiftUI
 import MatutaCore
 
-struct WeekdayPickerView: View {
+struct WeekdayPickerView: View, Localizable {
     @Binding var weekdays: Set<Weekday>
     let theme: CozyTheme
+    @Environment(LanguageSetting.self) var language
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("반복")
+                Text(t(.repeatLabel))
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(theme.textSecondary)
 
                 Spacer()
 
                 HStack(spacing: 4) {
-                    quickDayPreset("주중", days: [.monday, .tuesday, .wednesday, .thursday, .friday])
-                    quickDayPreset("주말", days: [.saturday, .sunday])
-                    quickDayPreset("매일", days: Set(Weekday.allCases))
-                    quickDayPreset("1회성", days: [])
+                    quickDayPreset(t(.weekdays), days: [.monday, .tuesday, .wednesday, .thursday, .friday])
+                    quickDayPreset(t(.weekends), days: [.saturday, .sunday])
+                    quickDayPreset(t(.everyday), days: Set(Weekday.allCases))
+                    quickDayPreset(t(.once), days: [])
                 }
             }
 
@@ -32,7 +33,7 @@ struct WeekdayPickerView: View {
                             weekdays.insert(day)
                         }
                     }) {
-                        Text(day.shortName)
+                        Text(t(day.shortNameText))
                             .font(.system(size: 12, weight: isSelected ? .bold : .medium))
                             .frame(maxWidth: .infinity, minHeight: 34)
                             .background(isSelected ? theme.accent : theme.cardBackground)

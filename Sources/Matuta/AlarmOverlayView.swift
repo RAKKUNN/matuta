@@ -1,11 +1,12 @@
 import SwiftUI
 import MatutaCore
 
-struct AlarmOverlayView: View {
+struct AlarmOverlayView: View, Localizable {
     let alarm: Alarm
     let activeSourceName: String
     let onDismiss: () -> Void
     let onSnooze: () -> Void
+    @Environment(LanguageSetting.self) var language
 
     @State private var now = Date()
     @State private var isDismissHovered = false
@@ -28,14 +29,14 @@ struct AlarmOverlayView: View {
 
                 // 대형 디지털 시계
                 VStack(spacing: 8) {
-                    Text(now, format: .dateTime.hour().minute())
+                    Text(now, format: .dateTime.hour().minute().locale(language.locale))
                         .font(.system(size: 124, weight: .ultraLight, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(Color.white)
                         .shadow(color: theme.accent.opacity(pulseAura ? 0.35 : 0.15), radius: 30, y: 10)
 
                     // 알람 라벨
-                    Text(alarm.label ?? "기분 좋은 아침")
+                    Text(alarm.label ?? (language.resolved == .korean ? "기분 좋은 아침" : "Pleasant Morning"))
                         .font(.system(size: 20, weight: .medium, design: .rounded))
                         .foregroundStyle(Color.white.opacity(0.85))
                         .padding(.top, 4)
@@ -55,7 +56,7 @@ struct AlarmOverlayView: View {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 19, weight: .semibold))
 
-                            Text("알람 끄기")
+                            Text(t(.dismissAlarm))
                                 .font(.system(size: 17, weight: .bold))
 
                             HStack(spacing: 3) {
@@ -91,7 +92,7 @@ struct AlarmOverlayView: View {
                             HStack(spacing: 6) {
                                 Image(systemName: "moon.zzz.fill")
                                     .font(.system(size: 12))
-                                Text("\(snooze)분 후 다시 알림 (스누즈)")
+                                Text(t(.snoozeWithMinutes(snooze)))
                                     .font(.system(size: 13, weight: .medium))
                             }
                             .foregroundStyle(Color.white.opacity(isSnoozeHovered ? 0.95 : 0.6))
@@ -115,7 +116,7 @@ struct AlarmOverlayView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "speaker.wave.2.fill")
                             .font(.system(size: 10))
-                        Text("내장 스피커 보호 출력 중")
+                        Text(t(.builtInSpeakerProtected))
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundStyle(Color.white.opacity(0.35))
@@ -192,11 +193,11 @@ struct AlarmOverlayView: View {
     private var defaultSourceText: String {
         switch alarm.source {
         case .builtIn(let tone): tone.rawValue
-        case .localFile: "음악 파일"
-        case .streamURL(let url): url.host ?? "라디오"
+        case .localFile: t(.localAudioFile)
+        case .streamURL(let url): url.host ?? t(.streamRadio)
         case .appleMusic: "Apple Music"
         case .spotify: "Spotify"
-        case .web(let url): url.host ?? "웹"
+        case .web(let url): url.host ?? t(.webAudio)
         }
     }
 }
