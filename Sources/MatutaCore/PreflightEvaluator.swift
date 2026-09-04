@@ -3,10 +3,18 @@ import Foundation
 public struct PreflightWarning: Sendable, Equatable, Identifiable {
     public var id: Kind { kind }
     public let kind: Kind
-    public let message: String
+    public let text: LocalizedText
     public let severity: Severity
     public let icon: String
-    public let actionLabel: String?
+    public let actionText: LocalizedText?
+
+    public var message: String {
+        Localizer.string(text, .korean)
+    }
+
+    public var actionLabel: String? {
+        actionText.map { Localizer.string($0, .korean) }
+    }
 
     public enum Kind: String, Sendable, Equatable {
         case headphones
@@ -23,58 +31,70 @@ public struct PreflightWarning: Sendable, Equatable, Identifiable {
 
     public init(
         kind: Kind,
-        message: String,
+        text: LocalizedText,
         severity: Severity = .warning,
         icon: String,
-        actionLabel: String? = nil
+        actionText: LocalizedText? = nil
     ) {
         self.kind = kind
-        self.message = message
+        self.text = text
         self.severity = severity
         self.icon = icon
-        self.actionLabel = actionLabel
+        self.actionText = actionText
     }
 }
 
 /// UI 뱃지 렌더링용 구조체
 public struct PreflightBadgeItem: Sendable, Equatable, Identifiable {
-    public var id: String { label }
+    public var id: String { "\(text.hashValue)_\(severity)" }
     public let icon: String
-    public let label: String
+    public let text: LocalizedText
     public let severity: PreflightWarning.Severity
     public let actionKind: PreflightWarning.Kind?
-    public let actionLabel: String?
+    public let actionText: LocalizedText?
+
+    public var label: String {
+        Localizer.string(text, .korean)
+    }
+
+    public var actionLabel: String? {
+        actionText.map { Localizer.string($0, .korean) }
+    }
 
     public init(
         icon: String,
-        label: String,
+        text: LocalizedText,
         severity: PreflightWarning.Severity,
         actionKind: PreflightWarning.Kind? = nil,
-        actionLabel: String? = nil
+        actionText: LocalizedText? = nil
     ) {
         self.icon = icon
-        self.label = label
+        self.text = text
         self.severity = severity
         self.actionKind = actionKind
-        self.actionLabel = actionLabel
+        self.actionText = actionText
     }
 }
 
 public struct PreflightReport: Sendable, Equatable {
     public let isSafe: Bool
     public let warnings: [PreflightWarning]
-    public let summary: String
+    public let summaryTexts: [LocalizedText]
     public let audio: AudioSnapshot
+
+    public var summary: String {
+        summaryTexts.map { Localizer.string($0, .korean) }.joined(separator: " · ")
+    }
 
     public init(
         isSafe: Bool,
         warnings: [PreflightWarning],
-        summary: String,
+        summaryTexts: [LocalizedText],
         audio: AudioSnapshot = AudioSnapshot(defaultDeviceName: "기본 기기", isHeadphones: false, volume: 0.5, isMuted: false)
     ) {
         self.isSafe = isSafe
         self.warnings = warnings
-        self.summary = summary
+        self.summaryTexts = summaryTexts
         self.audio = audio
     }
 
@@ -83,18 +103,18 @@ public struct PreflightReport: Sendable, Equatable {
         if let hp = warnings.first(where: { $0.kind == .headphones }) {
             return PreflightBadgeItem(
                 icon: hp.icon,
-                label: hp.message,
+                text: hp.text,
                 severity: hp.severity,
                 actionKind: hp.kind,
-                actionLabel: hp.actionLabel
+                actionText: hp.actionText
             )
         }
         return PreflightBadgeItem(
             icon: "speaker.wave.2.fill",
-            label: "내장 스피커 준비됨",
+            text: .builtInSpeakerReady,
             severity: .info,
             actionKind: nil,
-            actionLabel: nil
+            actionText: nil
         )
     }
 
@@ -103,18 +123,18 @@ public struct PreflightReport: Sendable, Equatable {
         if let volWarn = warnings.first(where: { $0.kind == .muted || $0.kind == .lowVolume }) {
             return PreflightBadgeItem(
                 icon: volWarn.icon,
-                label: volWarn.message,
+                text: volWarn.text,
                 severity: volWarn.severity,
                 actionKind: volWarn.kind,
-                actionLabel: volWarn.actionLabel
+                actionText: volWarn.actionText
             )
         }
         return PreflightBadgeItem(
             icon: "shield.checkmark.fill",
-            label: "울릴 때 스피커 보호 전환",
+            text: .speakerProtectionReady,
             severity: .info,
             actionKind: nil,
-            actionLabel: nil
+            actionText: nil
         )
     }
 
@@ -144,10 +164,10 @@ public struct PreflightEvaluator: Sendable {
         if audio.isHeadphones {
             warnings.append(PreflightWarning(
                 kind: .headphones,
-                message: "이어폰 연결됨 (울릴 때 내장 스피커로 자동 전환)",
+                text: .headphonesConnected,
                 severity: .info,
                 icon: "headphones",
-                actionLabel: "스피커로 전환"
+                actionText: .switchToSpeaker
             ))
         }
 
@@ -155,18 +175,18 @@ public struct PreflightEvaluator: Sendable {
         if audio.isMuted {
             warnings.append(PreflightWarning(
                 kind: .muted,
-                message: "시스템이 음소거 상태입니다 (울릴 때 자동 해제)",
+                text: .systemMuted,
                 severity: .warning,
                 icon: "speaker.slash.fill",
-                actionLabel: "70%로 해제"
+                actionText: .unmuteToSafeVolume
             ))
         } else if audio.volume < 0.3 {
             warnings.append(PreflightWarning(
                 kind: .lowVolume,
-                message: "현재 볼륨이 낮습니다 (\(Int(audio.volume * 100))%)",
+                text: .lowVolume(percent: Int(audio.volume * 100)),
                 severity: .warning,
                 icon: "speaker.wave.1.fill",
-                actionLabel: "70%로 조정"
+                actionText: .adjustToSafeVolume
             ))
         }
 
@@ -174,42 +194,41 @@ public struct PreflightEvaluator: Sendable {
         if let alarm, alarm.isEnabled && !wakeScheduled && !isSleepPrevented {
             warnings.append(PreflightWarning(
                 kind: .wakeNotScheduled,
-                message: "전원 자동 깨우기가 예약되지 않았습니다",
+                text: .wakeNotScheduled,
                 severity: .warning,
                 icon: "bolt.slash.fill",
-                actionLabel: nil
+                actionText: nil
             ))
         }
 
         // 4. 외부 앱 자동화 권한.
         //    볼륨·출력기기와 달리 AudioGuard가 발화 시점에 고쳐줄 수 없다.
         //    권한이 없으면 사용자가 고른 음악은 재생되지 않는다(백업음만 울린다).
-        if !automation.canPlay {
-            let target = automation.targetName
+        if !automation.canPlay, let target = automation.target {
             switch automation.status {
             case .denied:
                 warnings.append(PreflightWarning(
                     kind: .automationDenied,
-                    message: "\(target) 제어 권한이 꺼져 있습니다 (백업음만 울립니다)",
+                    text: .automationDenied(target: target),
                     severity: .warning,
                     icon: "lock.slash.fill",
-                    actionLabel: "설정 열기"
+                    actionText: .openSettings
                 ))
             case .notDetermined:
                 warnings.append(PreflightWarning(
                     kind: .automationDenied,
-                    message: "\(target) 제어 권한이 아직 허용되지 않았습니다",
+                    text: .automationNotDetermined(target: target),
                     severity: .warning,
                     icon: "lock.open.fill",
-                    actionLabel: "권한 허용"
+                    actionText: .requestPermission
                 ))
             case .appNotInstalled:
                 warnings.append(PreflightWarning(
                     kind: .automationDenied,
-                    message: "\(target) 앱이 설치되어 있지 않습니다 (백업음만 울립니다)",
+                    text: .automationNotInstalled(target: target),
                     severity: .warning,
                     icon: "questionmark.app.fill",
-                    actionLabel: nil
+                    actionText: nil
                 ))
             case .notRequired, .granted, .unknown:
                 break
@@ -217,13 +236,13 @@ public struct PreflightEvaluator: Sendable {
         }
 
         let isSafe = warnings.filter({ $0.severity == .warning }).isEmpty
-        let summary: String
+        let summaryTexts: [LocalizedText]
         if isSafe {
-            summary = "모든 준비 완료 · 내장 스피커 보호 · 절전 깨우기 예약됨"
+            summaryTexts = [.allReady, .builtInSpeakerProtected, .wakeScheduled]
         } else {
-            summary = warnings.map(\.message).joined(separator: " · ")
+            summaryTexts = warnings.map(\.text)
         }
 
-        return PreflightReport(isSafe: isSafe, warnings: warnings, summary: summary, audio: audio)
+        return PreflightReport(isSafe: isSafe, warnings: warnings, summaryTexts: summaryTexts, audio: audio)
     }
 }

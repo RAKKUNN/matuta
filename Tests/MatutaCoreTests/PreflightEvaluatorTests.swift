@@ -16,7 +16,7 @@ func testPreflightSafeState() {
 
     #expect(report.isSafe == true)
     #expect(report.warnings.isEmpty)
-    #expect(report.summary.contains("모든 준비 완료"))
+    #expect(report.summaryTexts.contains(.allReady))
 }
 
 @Test("헤드폰/에어팟이 연결된 경우 정보성(info) 알림을 생성하고 안전 판정을 유지한다")
@@ -34,7 +34,8 @@ func testPreflightHeadphonesState() {
     #expect(report.isSafe == true)
     #expect(report.warnings.count == 1)
     #expect(report.warnings[0].severity == .info)
-    #expect(report.warnings[0].message.contains("내장 스피커로 자동 전환"))
+    #expect(report.warnings[0].text == .headphonesConnected)
+    #expect(report.warnings[0].actionText == .switchToSpeaker)
 }
 
 @Test("음소거 또는 볼륨이 30% 미만인 경우 경고(warning)를 생성한다")
@@ -47,7 +48,8 @@ func testPreflightMutedOrLowVolumeState() {
     )
     let reportMuted = PreflightEvaluator.evaluate(audio: audioMuted, wakeScheduled: true, alarm: nil)
     #expect(reportMuted.isSafe == false)
-    #expect(reportMuted.warnings.contains { $0.message.contains("음소거") })
+    #expect(reportMuted.warnings.contains { $0.text == .systemMuted })
+    #expect(reportMuted.warnings.contains { $0.actionText == .unmuteToSafeVolume })
 
     let audioLow = AudioSnapshot(
         defaultDeviceName: "MacBook Pro 스피커",
@@ -57,7 +59,8 @@ func testPreflightMutedOrLowVolumeState() {
     )
     let reportLow = PreflightEvaluator.evaluate(audio: audioLow, wakeScheduled: true, alarm: nil)
     #expect(reportLow.isSafe == false)
-    #expect(reportLow.warnings.contains { $0.message.contains("볼륨이 낮습니다") })
+    #expect(reportLow.warnings.contains { $0.text == .lowVolume(percent: 15) })
+    #expect(reportLow.warnings.contains { $0.actionText == .adjustToSafeVolume })
 }
 
 @Test("켜진 알람이 있는데 전원 깨우기가 예약되지 않은 경우 경고를 생성한다")
@@ -72,7 +75,7 @@ func testPreflightWakeNotScheduledState() {
 
     let report = PreflightEvaluator.evaluate(audio: audio, wakeScheduled: false, alarm: alarm)
     #expect(report.isSafe == false)
-    #expect(report.warnings.contains { $0.message.contains("전원 자동 깨우기") })
+    #expect(report.warnings.contains { $0.text == .wakeNotScheduled })
 }
 
 @Test("헤드폰 연결 시 outputDeviceBadge는 .info이며 안전(isSafe=true) 상태를 유지한다")
@@ -87,7 +90,10 @@ func testPreflightHeadphonesBadgeIsInfo() {
     #expect(report.isSafe == true)
     #expect(report.outputDeviceBadge.severity == .info)
     #expect(report.outputDeviceBadge.actionKind == .headphones)
+    #expect(report.outputDeviceBadge.text == .headphonesConnected)
+    #expect(report.outputDeviceBadge.actionText == .switchToSpeaker)
     #expect(report.volumeGuardBadge.severity == .info)
+    #expect(report.volumeGuardBadge.text == .speakerProtectionReady)
     #expect(report.primaryWarning == nil)
     #expect(report.primaryInfo?.kind == .headphones)
 }
@@ -104,6 +110,8 @@ func testPreflightMutedBadgeIsWarning() {
     #expect(report.isSafe == false)
     #expect(report.volumeGuardBadge.severity == .warning)
     #expect(report.volumeGuardBadge.actionKind == .muted)
+    #expect(report.volumeGuardBadge.text == .systemMuted)
+    #expect(report.volumeGuardBadge.actionText == .unmuteToSafeVolume)
     #expect(report.primaryWarning?.kind == .muted)
 }
 
@@ -128,11 +136,12 @@ func automationDeniedProducesWarning() {
         audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
         wakeScheduled: true,
         alarm: Alarm(hour: 7, minute: 0),
-        automation: AutomationSnapshot(targetName: "Spotify", status: .denied)
+        automation: AutomationSnapshot(target: .spotify, status: .denied)
     )
     let warning = report.warnings.first { $0.kind == .automationDenied }
     #expect(warning?.severity == .warning)
-    #expect(warning?.message.contains("Spotify") == true)
+    #expect(warning?.text == .automationDenied(target: .spotify))
+    #expect(warning?.actionText == .openSettings)
     #expect(report.isSafe == false)
 }
 
@@ -142,10 +151,11 @@ func automationNotDeterminedOffersAction() {
         audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
         wakeScheduled: true,
         alarm: Alarm(hour: 7, minute: 0),
-        automation: AutomationSnapshot(targetName: "음악", status: .notDetermined)
+        automation: AutomationSnapshot(target: .appleMusic, status: .notDetermined)
     )
     let warning = report.warnings.first { $0.kind == .automationDenied }
-    #expect(warning?.actionLabel != nil)
+    #expect(warning?.text == .automationNotDetermined(target: .appleMusic))
+    #expect(warning?.actionText == .requestPermission)
 }
 
 @Test("대상 앱이 설치되어 있지 않으면 권한 요청이 아니라 설치 안내를 한다")
@@ -154,23 +164,22 @@ func automationAppNotInstalledHasNoAction() {
         audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
         wakeScheduled: true,
         alarm: Alarm(hour: 7, minute: 0),
-        automation: AutomationSnapshot(targetName: "Spotify", status: .appNotInstalled)
+        automation: AutomationSnapshot(target: .spotify, status: .appNotInstalled)
     )
     let warning = report.warnings.first { $0.kind == .automationDenied }
     #expect(warning != nil)
+    #expect(warning?.text == .automationNotInstalled(target: .spotify))
     // 설치가 안 된 건 앱이 대신 고쳐줄 수 없다 — 누를 수 있는 액션을 주면 안 된다.
-    #expect(warning?.actionLabel == nil)
+    #expect(warning?.actionText == nil)
 }
 
 @Test("권한을 판별할 수 없는 상태(대상 앱 미실행)는 경고하지 않는다")
 func automationUnknownProducesNoWarning() {
-    // AEDeterminePermissionToAutomateTarget은 대상 앱이 꺼져 있으면 -600을 준다.
-    // 잠들기 전에는 정상 상황이므로 경고하면 매일 밤 헛경고가 된다.
     let report = PreflightEvaluator.evaluate(
         audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
         wakeScheduled: true,
         alarm: Alarm(hour: 7, minute: 0),
-        automation: AutomationSnapshot(targetName: "Spotify", status: .unknown)
+        automation: AutomationSnapshot(target: .spotify, status: .unknown)
     )
     #expect(report.warnings.contains { $0.kind == .automationDenied } == false)
     #expect(report.isSafe)

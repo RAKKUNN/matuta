@@ -10,17 +10,22 @@ public enum Weekday: Int, Codable, CaseIterable, Sendable, Hashable {
     case friday = 6
     case saturday = 7
 
-    /// 목록 창과 편집 시트에 쓰는 한 글자 표기.
-    public var shortName: String {
+    /// 목록 창과 편집 시트에 쓰는 축약 표기 키.
+    public var shortNameText: LocalizedText {
         switch self {
-        case .sunday: "일"
-        case .monday: "월"
-        case .tuesday: "화"
-        case .wednesday: "수"
-        case .thursday: "목"
-        case .friday: "금"
-        case .saturday: "토"
+        case .sunday: .sundayShort
+        case .monday: .mondayShort
+        case .tuesday: .tuesdayShort
+        case .wednesday: .wednesdayShort
+        case .thursday: .thursdayShort
+        case .friday: .fridayShort
+        case .saturday: .saturdayShort
         }
+    }
+
+    /// 목록 창과 편집 시트에 쓰는 표기 (기본값).
+    public var shortName: String {
+        Localizer.string(shortNameText, .korean)
     }
 
     /// 편집 시트에 월요일부터 표시하기 위한 순서.

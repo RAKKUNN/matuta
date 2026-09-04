@@ -17,10 +17,10 @@ import MatutaCore
 @MainActor
 enum AutomationPermission {
 
-    private static func target(for ref: SoundSourceRef) -> (bundleID: String, name: String)? {
+    private static func target(for ref: SoundSourceRef) -> (bundleID: String, target: AutomationTarget)? {
         switch ref {
-        case .spotify: ("com.spotify.client", "Spotify")
-        case .appleMusic: ("com.apple.Music", "음악")
+        case .spotify: ("com.spotify.client", .spotify)
+        case .appleMusic: ("com.apple.Music", .appleMusic)
         case .builtIn, .localFile, .streamURL, .web: nil
         }
     }
@@ -34,11 +34,11 @@ enum AutomationPermission {
         guard NSWorkspace.shared
             .urlForApplication(withBundleIdentifier: target.bundleID) != nil
         else {
-            return AutomationSnapshot(targetName: target.name, status: .appNotInstalled)
+            return AutomationSnapshot(target: target.target, status: .appNotInstalled)
         }
 
         return AutomationSnapshot(
-            targetName: target.name,
+            target: target.target,
             status: determineStatus(bundleID: target.bundleID, askIfNeeded: false)
         )
     }
