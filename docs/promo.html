@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matuta — promo</title>
+<meta name="robots" content="noindex">
+<style>
+/* Matuta 홍보 모션.
+   1920×1080 고정 스테이지를 뷰포트에 맞춰 축소한다. 화면 녹화하면
+   그대로 16:9 영상이 된다. 색은 앱의 Cozy Midnight 테마 그대로. */
+
+:root {
+  --bg:     #0E0C0C;
+  --panel:  #171414;
+  --accent: #F59E33;
+  --green:  #7DDCA4;
+  --text:   #F2EDE8;
+  --text-2: rgba(242,237,232,.55);
+  --text-3: rgba(242,237,232,.30);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+               "Helvetica Neue", "Apple SD Gothic Neo", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#fit { position: absolute; inset: 0; }
+
+/* 실제 합성이 일어나는 캔버스. 항상 1920×1080 으로 그리고 스케일만 바꾼다.
+   뷰포트보다 큰 요소라 그리드 센터링을 쓰면 좌·상단이 잘린다.
+   절대 위치 + translate 로 확정적으로 중앙에 둔다. */
+#stage {
+  position: absolute; left: 50%; top: 50%;
+  width: 1920px; height: 1080px;
+  background: var(--bg);
+  overflow: hidden;
+  transform-origin: center center;
+  transform: translate(-50%, -50%) scale(var(--s, 1));
+}
+
+/* ── 배경 레이어 ─────────────────────────────── */
+.vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 50% 50%,
+      transparent 30%, rgba(0,0,0,.55) 100%);
+  pointer-events: none; z-index: 6;
+}
+.glow {
+  position: absolute; left: 50%; top: 50%;
+  width: 1700px; height: 1700px; margin: -850px 0 0 -850px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+      rgba(245,158,51,.30) 0%, rgba(245,158,51,.10) 35%, transparent 68%);
+  opacity: 0;
+}
+.grain {
+  position: absolute; inset: -50%;
+  background-image: repeating-conic-gradient(rgba(255,255,255,.025) 0% 25%, transparent 0% 50%);
+  background-size: 3px 3px;
+  opacity: .5; pointer-events: none; z-index: 7;
+}
+
+/* ── 공통 ────────────────────────────────────── */
+.layer {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  align-content: center;
+  text-align: center;
+}
+/* 마스크 리빌: 자식이 아래에서 올라오며 드러난다 */
+.mask { overflow: hidden; display: block; }
+.mask > span { display: block; will-change: transform; }
+
+/* ── 시계 ────────────────────────────────────── */
+.clock {
+  font-size: 300px; font-weight: 100; line-height: 1;
+  letter-spacing: -12px; color: var(--text);
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+}
+.clock .sep { opacity: .45; }
+.clock-sub {
+  margin-top: 30px; font-size: 26px; letter-spacing: 3px;
+  color: var(--text-3); text-transform: uppercase; opacity: 0;
+}
+
+/* ── 문장 ────────────────────────────────────── */
+.line-1 {
+  font-size: 84px; font-weight: 600; letter-spacing: -2.5px;
+  color: var(--text); line-height: 1.15;
+}
+.line-2 {
+  margin-top: 26px; font-size: 38px; font-weight: 400;
+  color: var(--text-2); letter-spacing: -.5px;
+}
+.rule {
+  width: 0; height: 2px; margin: 54px auto 0;
+  background: var(--accent);
+}
+
+/* ── 상태 칩 ─────────────────────────────────── */
+.chips {
+  display: flex; gap: 18px; justify-content: center;
+  margin-top: 64px;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 20px 34px; border-radius: 999px;
+  background: var(--panel); border: 1px solid rgba(242,237,232,.10);
+  font-size: 27px; color: var(--accent); white-space: nowrap;
+  opacity: 0;
+}
+.chip .dot {
+  width: 13px; height: 13px; border-radius: 50%;
+  background: var(--accent); flex: none;
+}
+.chip.ok { color: var(--green); border-color: rgba(125,220,164,.28); }
+.chip.ok .dot { background: var(--green); }
+
+/* ── 키캡 ────────────────────────────────────── */
+.keycap {
+  padding: 30px 130px; border-radius: 20px;
+  background: #221D1D; border: 2px solid rgba(242,237,232,.14);
+  border-bottom-width: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 36px; letter-spacing: 8px; color: var(--text-2);
+  opacity: 0;
+}
+
+/* ── 엔드 카드 ───────────────────────────────── */
+.endcard { gap: 0; }
+.endcard img { width: 132px; height: 132px; border-radius: 30px; opacity: 0; }
+.wordmark {
+  margin-top: 40px; font-size: 96px; font-weight: 600;
+  color: var(--text); letter-spacing: 40px; text-indent: 40px; opacity: 0;
+}
+.endline {
+  margin-top: 22px; font-size: 32px; color: var(--text-2); opacity: 0;
+}
+.endmeta {
+  margin-top: 60px; font-size: 24px; color: var(--text-3);
+  letter-spacing: 1.5px; opacity: 0;
+}
+
+/* ── 컨트롤 (녹화 시 자동 숨김) ──────────────── */
+#controls {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+  display: flex; gap: 10px; z-index: 100;
+  transition: opacity .4s;
+}
+#controls.hidden { opacity: 0; pointer-events: none; }
+#controls button {
+  font: inherit; font-size: 13px; color: #ddd;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+  padding: 8px 16px; border-radius: 999px; cursor: pointer;
+}
+#controls button:hover { background: rgba(255,255,255,.14); }
+</style>
+</head>
+<body>
+
+<div id="fit">
+  <div id="stage">
+    <div class="glow" id="glow"></div>
+
+    <!-- 1. 밤 → 시간 가속 -->
+    <div class="layer" id="sc-clock">
+      <div>
+        <div class="clock" id="clock"><span id="hh">03</span><span class="sep">:</span><span id="mm">12</span></div>
+        <div class="clock-sub" id="clockSub">Wednesday</div>
+      </div>
+    </div>
+
+    <!-- 2. 침묵 -->
+    <div class="layer" id="sc-silence" style="opacity:0">
+      <div>
+        <div class="line-1"><span class="mask"><span id="s1a">Your alarm went off.</span></span></div>
+        <div class="line-2"><span class="mask"><span id="s1b">Your Mac was asleep. It never rang.</span></span></div>
+        <div class="rule" id="rule1"></div>
+      </div>
+    </div>
+
+    <!-- 3. Matuta 가 깨운다 -->
+    <div class="layer" id="sc-wake" style="opacity:0">
+      <div>
+        <div class="line-1"><span class="mask"><span id="s2a">Matuta wakes the Mac.</span></span></div>
+        <div class="line-2"><span class="mask"><span id="s2b">A power event, two minutes early. Lid closed. It rings.</span></span></div>
+      </div>
+    </div>
+
+    <!-- 4. 신뢰성 -->
+    <div class="layer" id="sc-guard" style="opacity:0">
+      <div>
+        <div class="line-1" style="font-size:66px"><span class="mask"><span id="s3a">And it checks before you sleep.</span></span></div>
+        <div class="chips">
+          <span class="chip" id="c1"><span class="dot"></span><span id="c1t">Earbuds connected</span></span>
+          <span class="chip" id="c2"><span class="dot"></span><span id="c2t">System muted</span></span>
+          <span class="chip" id="c3"><span class="dot"></span><span id="c3t">Volume 12%</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. 해제 -->
+    <div class="layer" id="sc-dismiss" style="opacity:0">
+      <div>
+        <div class="line-2" style="margin:0 0 44px; color:var(--text-3)">One key turns it off.</div>
+        <div class="keycap" id="keycap">SPACE</div>
+      </div>
+    </div>
+
+    <!-- 6. 엔드 카드 -->
+    <div class="layer endcard" id="sc-end" style="opacity:0">
+      <div>
+        <img src="images/logo.png" alt="" id="endLogo">
+        <div class="wordmark" id="wordmark">MATUTA</div>
+        <div class="endline" id="endline">A macOS alarm clock that actually goes off.</div>
+        <div class="endmeta" id="endmeta">Free · Open source · rakkunn.github.io/matuta</div>
+      </div>
+    </div>
+
+    <div class="grain"></div>
+    <div class="vignette"></div>
+  </div>
+</div>
+
+<div id="controls">
+  <button id="replay">↻ Replay</button>
+  <button id="record">Recording mode</button>
+</div>
+
+<script type="module">
+import { animate, createTimeline, stagger, utils }
+  from './vendor/anime.esm.min.js';
+
+/* ── 스테이지를 뷰포트에 맞춘다 ─────────────────
+   합성은 항상 1920×1080 좌표계에서 하고 스케일만 바꾼다.
+   그래야 어느 화면에서 녹화해도 구도가 같다. */
+const stage = document.getElementById('stage');
+function fit() {
+  const scale = Math.min(innerWidth / 1920, innerHeight / 1080);
+  // transform 은 CSS 가 소유한다. JS 는 배율만 넘긴다.
+  stage.style.setProperty('--s', String(scale));
+}
+fit();
+addEventListener('resize', fit);
+
+const $ = (id) => document.getElementById(id);
+
+/* ── 초기 상태 ──────────────────────────────── */
+function reset() {
+  utils.set('#glow', { opacity: 0, scale: .6 });
+  utils.set('#clock', { opacity: 0, scale: 1 });
+  utils.set('#clockSub', { opacity: 0 });
+  utils.set(['#sc-silence', '#sc-wake', '#sc-guard', '#sc-dismiss', '#sc-end'], { opacity: 0 });
+  utils.set('.mask > span', { y: '110%' });
+  utils.set('#rule1', { width: 0 });
+  utils.set('.chip', { opacity: 0, y: 26 });
+  utils.set('#keycap', { opacity: 0, y: 0, scale: 1 });
+  utils.set(['#endLogo', '#wordmark', '#endline', '#endmeta'], { opacity: 0 });
+  utils.set('#wordmark', { letterSpacing: '90px' });
+
+  $('hh').textContent = '03';
+  $('mm').textContent = '12';
+  for (const [el, cls] of [['c1','ok'], ['c2','ok'], ['c3','ok']]) $(el).classList.remove(cls);
+  $('c1t').textContent = 'Earbuds connected';
+  $('c2t').textContent = 'System muted';
+  $('c3t').textContent = 'Volume 12%';
+}
+
+/* 시계를 03:12 → 07:00 으로 가속시키는 프록시 */
+const clockProxy = { minutes: 3 * 60 + 12 };
+function paintClock() {
+  const total = Math.round(clockProxy.minutes) % (24 * 60);
+  $('hh').textContent = String(Math.floor(total / 60)).padStart(2, '0');
+  $('mm').textContent = String(total % 60).padStart(2, '0');
+}
+
+function build() {
+  reset();
+  clockProxy.minutes = 3 * 60 + 12;
+
+  const tl = createTimeline({ defaults: { ease: 'outQuart' } });
+
+  // ── 1. 밤 (0.0s~) ──────────────────────────
+  tl.add('#clock',    { opacity: [0, .55], duration: 1400, ease: 'outQuad' }, 0)
+    .add('#clockSub', { opacity: [0, .5],  duration: 1200 }, 400)
+
+  // ── 시간 가속 (1.9s~) ──────────────────────
+  // 새벽에서 아침까지 시간이 흐르는 것을 압축해서 보여준다.
+    .add(clockProxy, {
+      minutes: 7 * 60,
+      duration: 1900,
+      ease: 'inOutQuart',
+      onUpdate: paintClock,
+    }, 1900)
+    .add('#clock', { opacity: [.55, 1], scale: [1, 1.04], duration: 700, ease: 'outExpo' }, 3400)
+    .add('#clockSub', { opacity: 0, duration: 300 }, 3400)
+
+  // ── 2. 침묵 (4.2s~) ────────────────────────
+  // 여기서 아무 일도 일어나지 않는 것이 요점이다.
+    .add('#clock', { opacity: [1, .12], scale: .82, duration: 900, ease: 'inOutQuad' }, 4200)
+    .add('#sc-silence', { opacity: [0, 1], duration: 500 }, 4600)
+    .add('#s1a', { y: ['110%', '0%'], duration: 900, ease: 'outExpo' }, 4700)
+    .add('#s1b', { y: ['110%', '0%'], duration: 900, ease: 'outExpo' }, 4880)
+    .add('#rule1', { width: [0, 220], duration: 700, ease: 'outExpo' }, 5400)
+
+    .add('#sc-silence', { opacity: 0, duration: 450, ease: 'inQuad' }, 7100)
+
+  // ── 3. Matuta 가 깨운다 (7.3s~) ────────────
+  // 글로우가 피어나면서 화면이 살아난다.
+    .add('#glow', { opacity: [0, 1], scale: [.6, 1], duration: 1600, ease: 'outExpo' }, 7300)
+    .add('#clock', { opacity: [.12, .30], scale: .9, duration: 1200, ease: 'outQuad' }, 7300)
+    .add('#sc-wake', { opacity: [0, 1], duration: 500 }, 7500)
+    .add('#s2a', { y: ['110%', '0%'], duration: 950, ease: 'outExpo' }, 7600)
+    .add('#s2b', { y: ['110%', '0%'], duration: 950, ease: 'outExpo' }, 7800)
+
+    .add('#sc-wake', { opacity: 0, duration: 450, ease: 'inQuad' }, 10200)
+
+  // ── 4. 신뢰성 (10.4s~) ─────────────────────
+    // 칩 구간에서는 배경 시계를 더 낮춘다. 칩과 겹쳐 어수선해진다.
+    .add('#clock', { opacity: .12, duration: 600, ease: 'inOutQuad' }, 10200)
+    .add('#sc-guard', { opacity: [0, 1], duration: 450 }, 10400)
+    .add('#s3a', { y: ['110%', '0%'], duration: 900, ease: 'outExpo' }, 10500)
+    .add('.chip', {
+      opacity: [0, 1], y: [26, 0],
+      duration: 750, ease: 'outExpo', delay: stagger(150),
+    }, 10900);
+
+  // 칩이 하나씩 해결된다 — 이 앱이 실제로 하는 일
+  const fixes = [
+    { id: 'c1', text: 'Switched to speaker', at: 11900 },
+    { id: 'c2', text: 'Unmuted',             at: 12250 },
+    { id: 'c3', text: 'Volume 70%',          at: 12600 },
+  ];
+  for (const f of fixes) {
+    tl.add({ v: 0 }, {
+      v: 1, duration: 1,
+      onComplete: () => {
+        $(f.id).classList.add('ok');
+        $(f.id + 't').textContent = f.text;
+      },
+    }, f.at);
+    tl.add('#' + f.id, { scale: [1, 1.06, 1], duration: 480, ease: 'outQuad' }, f.at);
+  }
+
+  tl.add('#sc-guard', { opacity: 0, duration: 450, ease: 'inQuad' }, 14000)
+
+  // ── 5. 해제 (14.2s~) ───────────────────────
+    .add('#sc-dismiss', { opacity: [0, 1], duration: 400 }, 14200)
+    .add('#keycap', { opacity: [0, 1], y: [22, 0], duration: 700, ease: 'outExpo' }, 14300)
+    // 눌린다
+    .add('#keycap', { y: [0, 7], borderBottomWidth: ['8px', '2px'], duration: 110, ease: 'outQuad' }, 15300)
+    .add('#keycap', { y: [7, 0], borderBottomWidth: ['2px', '8px'], duration: 200, ease: 'outQuad' }, 15410)
+    // 전부 꺼진다
+    .add(['#glow', '#clock', '#sc-dismiss'], { opacity: 0, duration: 700, ease: 'inQuad' }, 15700)
+
+  // ── 6. 엔드 카드 (16.5s~) ──────────────────
+    .add('#sc-end',   { opacity: [0, 1], duration: 400 }, 16500)
+    .add('#endLogo',  { opacity: [0, 1], scale: [.86, 1], duration: 900, ease: 'outExpo' }, 16600)
+    .add('#wordmark', {
+      opacity: [0, 1], letterSpacing: ['90px', '40px'],
+      duration: 1400, ease: 'outExpo',
+    }, 16850)
+    .add('#endline',  { opacity: [0, 1], y: [16, 0], duration: 800 }, 17400)
+    .add('#endmeta',  { opacity: [0, 1], duration: 800 }, 17800)
+    .add('#glow', { opacity: [0, .5], scale: [.8, 1.05], duration: 2200, ease: 'outQuad' }, 16600);
+
+  return tl;
+}
+
+let timeline = build();
+
+/* 스크럽용으로 노출한다. 녹화 중 특정 구간만 다시 보거나
+   콘솔에서 matuta.seek(8000) 처럼 원하는 시점을 확인할 수 있다. */
+window.matuta = {
+  get timeline() { return timeline; },
+  replay() { timeline = build(); return timeline; },
+  seek(ms) { timeline.pause(); timeline.seek(ms); return ms; },
+  play() { timeline.play(); },
+};
+
+/* ── 컨트롤 ─────────────────────────────────── */
+$('replay').addEventListener('click', () => { timeline = build(); });
+
+$('record').addEventListener('click', () => {
+  const c = $('controls');
+  c.classList.add('hidden');
+  // 컨트롤이 사라진 뒤 처음부터 다시 재생한다. 녹화 시작 여유 1.2초.
+  setTimeout(() => { timeline = build(); }, 1200);
+  // 마우스를 움직이면 컨트롤이 돌아온다.
+  addEventListener('mousemove', () => c.classList.remove('hidden'), { once: true });
+});
+
+// 스페이스로 리플레이 — 이 앱다운 단축키
+addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); timeline = build(); }
+});
+</script>
+</body>
+</html>
