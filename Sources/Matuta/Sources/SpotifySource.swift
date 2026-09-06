@@ -29,7 +29,7 @@ final class SpotifySource: SoundSource {
 
     func play(volume: Double, fadeIn: Bool) async throws {
         if let url = URL(string: uri) {
-            NSWorkspace.shared.open(url)
+            openWithoutActivating(url)
         }
 
         let scriptSource = """

@@ -71,6 +71,14 @@ final class AlarmOverlayController {
         windows.first?.makeKey()
     }
 
+    /// 외부 앱이 그래도 앞으로 나온 경우를 대비한 보험.
+    /// 떠 있는 오버레이가 없으면 아무 일도 하지 않는다.
+    func refocus() {
+        guard let first = windows.first else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        first.makeKeyAndOrderFront(nil)
+    }
+
     func hide() {
         for window in windows {
             window.orderOut(nil)

@@ -27,7 +27,7 @@ final class AppleMusicSource: SoundSource {
 
     func play(volume: Double, fadeIn: Bool) async throws {
         if let url = URL(string: id), url.scheme?.hasPrefix("http") == true {
-            NSWorkspace.shared.open(url)
+            openWithoutActivating(url)
         }
 
         let scriptSource = """

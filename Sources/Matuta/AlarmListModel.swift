@@ -240,6 +240,9 @@ final class AlarmListModel {
                 volume: alarm.volume,
                 fadeIn: alarm.fadeIn
             )
+            // 외부 앱이 포커스를 가져갔을 수 있다. 스페이스바가 오버레이로
+            // 오도록 키 창을 되찾는다.
+            self.overlay.refocus()
         }
 
         // 4. 전체화면 오버레이 표시
