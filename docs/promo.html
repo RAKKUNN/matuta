@@ -270,7 +270,7 @@ html, body {
 
 <div id="controls">
   <button id="replay">↻ Replay</button>
-  <button id="record">Recording mode</button>
+  <button id="record">Recording mode (R)</button>
 </div>
 
 <script type="module">
@@ -429,17 +429,25 @@ window.matuta = {
   play() { timeline.play(); },
 };
 
-$('replay').addEventListener('click', () => { timeline = build(); });
-
-$('record').addEventListener('click', () => {
-  const c = $('controls');
-  c.classList.add('hidden');
+/* 녹화 모드. 마우스를 건드리면 컨트롤이 다시 나오므로
+   시작도 종료도 키보드로만 되게 한다. R 로 들어가고 Esc 로 나온다. */
+function startRecording() {
+  $('controls').classList.add('hidden');
+  document.body.style.cursor = 'none';
   setTimeout(() => { timeline = build(); }, 1200);
-  addEventListener('mousemove', () => c.classList.remove('hidden'), { once: true });
-});
+}
+function stopRecording() {
+  $('controls').classList.remove('hidden');
+  document.body.style.cursor = '';
+}
+
+$('replay').addEventListener('click', () => { timeline = build(); });
+$('record').addEventListener('click', startRecording);
 
 addEventListener('keydown', (e) => {
-  if (e.code === 'Space') { e.preventDefault(); timeline = build(); }
+  if (e.code === 'Space')  { e.preventDefault(); timeline = build(); }
+  if (e.code === 'KeyR')   { e.preventDefault(); startRecording(); }
+  if (e.code === 'Escape') { stopRecording(); }
 });
 </script>
 </body>
