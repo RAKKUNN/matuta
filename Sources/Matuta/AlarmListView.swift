@@ -44,8 +44,18 @@ struct AlarmListView: View, Localizable {
                                 onEdit: { model.editing = alarm },
                                 onDelete: { model.delete(alarm) }
                             )
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .scale(scale: 0.97, anchor: .top)),
+                                removal: .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+                            ))
                         }
                     }
+                    // save() 가 시각순 정렬을 하므로 편집만 해도 카드 위치가 바뀐다.
+                    // 애니메이션이 없으면 방금 고친 카드가 어디로 갔는지 눈으로 쫓을 수 없다.
+                    .animation(
+                        .easeInOut(duration: MotionEnvironment.duration(.listChange)),
+                        value: model.alarms
+                    )
                     .padding(20)
                 }
             }
