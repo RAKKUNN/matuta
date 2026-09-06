@@ -424,9 +424,26 @@ let timeline = build();
 /* 스크럽용. 녹화 중 특정 구간만 다시 보거나 콘솔에서 matuta.seek(9000). */
 window.matuta = {
   get timeline() { return timeline; },
+  get duration() { return timeline.duration; },
   replay() { timeline = build(); return timeline; },
   seek(ms) { timeline.pause(); timeline.seek(ms); return ms; },
   play() { timeline.play(); },
+
+  /* 전체 화면 녹화본에서 스테이지만 잘라내는 ffmpeg 명령을 만들어 준다.
+     배경이 거의 검정이라 cropdetect 는 스테이지 안쪽까지 잘라먹는다.
+     좌표는 눈으로 재는 대신 여기서 계산한다.
+     전체 화면(브라우저 크롬 없음) 상태에서 호출할 것. */
+  ffmpeg(input = '~/Desktop/promo.mov', output = '~/Desktop/matuta-promo.mp4') {
+    const r = stage.getBoundingClientRect();
+    const d = devicePixelRatio || 1;
+    const even = (n) => Math.round(n / 2) * 2;
+    const [w, h, x, y] = [even(r.width * d), even(r.height * d),
+                          even(r.left * d), even(r.top * d)];
+    const cmd = `ffmpeg -i ${input} -vf "crop=${w}:${h}:${x}:${y},scale=1920:1080:flags=lanczos" `
+              + `-c:v libx264 -pix_fmt yuv420p -crf 17 -preset slow -an ${output}`;
+    console.log(cmd);
+    return cmd;
+  },
 };
 
 /* 녹화 모드. 마우스를 건드리면 컨트롤이 다시 나오므로
