@@ -46,6 +46,8 @@ That's the gap Matuta fills: **removing the reasons an alarm fails to wake you.*
 
 **Korean and English.** Follows your system language by default; switch it in Settings (⌘,) and the whole app changes immediately — no restart.
 
+**It starts with your Mac.** Turn on "Launch at login" in Settings and Matuta comes back after a restart — an alarm app that isn't running can't wake you.
+
 ## Screenshots
 
 <p align="center">
