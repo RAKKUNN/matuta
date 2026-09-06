@@ -17,8 +17,11 @@
 ---
 
 <p align="center">
-  <img src="docs/images/main.png" width="760" alt="Matuta 메인 창">
+  <a href="https://rakkunn.github.io/matuta/promo.mp4">
+    <img src="docs/images/promo.gif" width="760" alt="Matuta">
+  </a>
 </p>
+<p align="center"><sub><i>누르면 원본 화질 영상으로 이동한다.</i></sub></p>
 
 ## 왜 만들었나
 
@@ -51,6 +54,11 @@ Matuta의 차별점은 여기다 — **울리지 않을 경우를 미리 제거�
 **맥과 함께 켜진다.** 설정에서 "로그인 시 실행"을 켜두면 재시동 뒤에도 돌아온다 — 떠 있지 않은 알람 앱은 깨워줄 수 없다.
 
 ## 화면
+
+<p align="center">
+  <img src="docs/images/main.png" width="760" alt="Matuta 메인 창">
+</p>
+<p align="center"><sub><i>메인 창. 알람과, 각 알람이 깨우는 소리.</i></sub></p>
 
 <p align="center">
   <img src="docs/images/nightstand.png" width="760" alt="나이트스탠드">

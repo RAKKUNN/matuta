@@ -252,6 +252,29 @@ if (keycap && dismissed) {
   });
 }
 
+/* ── Promo film ────────────────────────────────────────────
+   화면에 들어와 있을 때만 재생한다. 백그라운드 탭이나 스크롤 밖에서
+   24초짜리 루프를 계속 돌릴 이유가 없다.
+   Reduce Motion 이면 자동 재생하지 않고 컨트롤을 준다. */
+const promo = document.getElementById('promo');
+if (promo) {
+  if (reduced) {
+    promo.controls = true;
+    promo.preload = 'metadata';
+  } else {
+    new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) { promo.pause(); continue; }
+        // 자동 재생이 정책으로 막힌 경우에만 컨트롤을 준다.
+        // 백그라운드 탭에서 나는 AbortError 는 일시적이므로 무시한다.
+        promo.play().catch((err) => {
+          if (err.name === 'NotAllowedError') promo.controls = true;
+        });
+      }
+    }, { threshold: 0.35 }).observe(promo);
+  }
+}
+
 /* ── Nav hairline on scroll ────────────────────────────────*/
 const nav = $('.nav');
 const paintNav = () => nav.classList.toggle('scrolled', scrollY > 12);

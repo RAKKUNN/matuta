@@ -13,7 +13,7 @@
 <link rel="icon" href="images/logo.png">
 <!-- ?v= 는 배포마다 올린다. GitHub Pages 가 자산에 max-age=600 을 주기
      때문에, 버전이 없으면 재방문자가 새 HTML 에 옛 CSS/JS 를 받는다. -->
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -63,6 +63,20 @@
 </header>
 
 <main>
+
+<!-- ── Film ─────────────────────────────────────────── -->
+<section class="section film" id="film">
+  <div class="film-frame reveal">
+    <video id="promo" poster="images/promo-poster.png"
+           muted loop playsinline preload="none"
+           data-en-label="Matuta in motion" data-ko-label="움직이는 Matuta">
+      <source src="promo.mp4" type="video/mp4">
+    </video>
+  </div>
+  <p class="film-note"
+     data-en="No sound. 24 seconds."
+     data-ko="소리 없음. 24초."></p>
+</section>
 
 <!-- ── Problem ──────────────────────────────────────── -->
 <section class="section" id="why">
@@ -193,6 +207,6 @@
                       data-ko="모션은 anime.js. 빌드 도구 없이 만들었습니다."></p>
 </footer>
 
-<script type="module" src="main.js?v=3"></script>
+<script type="module" src="main.js?v=4"></script>
 </body>
 </html>

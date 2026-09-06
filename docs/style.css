@@ -230,6 +230,18 @@ img { max-width: 100%; height: auto; display: block; }
 .footer a:hover { color: var(--accent); }
 .colophon { font-size: 12.5px; opacity: .75; }
 
+/* ── Film ────────────────────────────────────────── */
+.film { padding-top: 0; }
+.film-frame {
+  border: 1px solid var(--stroke); border-radius: 14px; overflow: hidden;
+  background: #0C0A0A; line-height: 0;
+}
+.film-frame video { width: 100%; height: auto; display: block; }
+.film-note {
+  margin: 16px 0 0; text-align: center;
+  font-size: 13px; color: var(--text-3);
+}
+
 /* ── Reveal (JS adds .in) ────────────────────────── */
 .reveal { opacity: 0; }
 .reveal.in { opacity: 1; }

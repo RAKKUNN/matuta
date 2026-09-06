@@ -17,8 +17,11 @@
 ---
 
 <p align="center">
-  <img src="docs/images/main.png" width="760" alt="Matuta main window">
+  <a href="https://rakkunn.github.io/matuta/promo.mp4">
+    <img src="docs/images/promo.gif" width="760" alt="Matuta">
+  </a>
 </p>
+<p align="center"><sub><i>Click for the full-quality video.</i></sub></p>
 
 ## Why
 
@@ -51,6 +54,11 @@ That's the gap Matuta fills: **removing the reasons an alarm fails to wake you.*
 **It starts with your Mac.** Turn on "Launch at login" in Settings and Matuta comes back after a restart — an alarm app that isn't running can't wake you.
 
 ## Screenshots
+
+<p align="center">
+  <img src="docs/images/main.png" width="760" alt="Matuta main window">
+</p>
+<p align="center"><sub><i>The main window. Alarms, and the sound each one wakes you with.</i></sub></p>
 
 <p align="center">
   <img src="docs/images/nightstand.png" width="760" alt="Nightstand view">
