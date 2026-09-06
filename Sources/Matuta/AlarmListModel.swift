@@ -5,6 +5,14 @@ import MatutaCore
 @MainActor
 @Observable
 final class AlarmListModel {
+    /// 앱 전역에서 쓰는 단 하나의 인스턴스.
+    ///
+    /// App 구조체의 `@State` 로 들고 있으면 SwiftUI 가 씬 그래프를 갱신할 때
+    /// `@MainActor` 동적 격리 검사가 들어가고, 그 검사가 크래시한다
+    /// (크래시 리포트 2026-09-03, 2026-09-06 — 같은 스택). 뷰의 body 는
+    /// 메인 액터 격리가 확실하므로, 상태를 뷰에서 참조하도록 옮긴다.
+    static let shared = AlarmListModel()
+
     private(set) var alarms: [Alarm] = []
 
     /// 편집 시트에 띄울 알람. `nil`이면 시트가 닫혀 있다.
