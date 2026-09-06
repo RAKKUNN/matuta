@@ -12,6 +12,7 @@ struct AlarmOverlayView: View, Localizable {
     @State private var isDismissHovered = false
     @State private var isSnoozeHovered = false
     @State private var pulseAura = false
+    @State private var isBreathing = false
 
     private var theme: CozyTheme {
         ThemeManager.shared.current
@@ -82,6 +83,12 @@ struct AlarmOverlayView: View, Localizable {
                         )
                         .shadow(color: theme.accent.opacity(isDismissHovered ? 0.45 : 0.20), radius: isDismissHovered ? 28 : 16, y: 6)
                         .scaleEffect(isDismissHovered ? 1.03 : 1.0)
+                        .opacity(isBreathing ? 1.0 : 0.82)
+                        .animation(
+                            .easeInOut(duration: MotionEnvironment.duration(.affordanceBreath))
+                                .repeatForever(autoreverses: true),
+                            value: isBreathing
+                        )
                     }
                     .buttonStyle(.plain)
                     .onHover { isDismissHovered = $0 }
@@ -130,6 +137,8 @@ struct AlarmOverlayView: View, Localizable {
             withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
                 pulseAura = true
             }
+            // Reduce Motion 이면 지속시간이 0 이라 사실상 정지 상태가 된다.
+            isBreathing = true
         }
         .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isDismissHovered)
         .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSnoozeHovered)
