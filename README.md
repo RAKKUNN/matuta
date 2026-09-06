@@ -44,6 +44,8 @@ That's the gap Matuta fills: **removing the reasons an alarm fails to wake you.*
 
 **Spacebar to dismiss.** Snooze is deliberately mouse-only. Easy to turn off, harder to fall back asleep.
 
+**It arrives gently.** The volume fades in and so does the screen — no hard cut to full black at 7am. Motion respects the system's Reduce Motion setting.
+
 **Korean and English.** Follows your system language by default; switch it in Settings (⌘,) and the whole app changes immediately — no restart.
 
 **It starts with your Mac.** Turn on "Launch at login" in Settings and Matuta comes back after a restart — an alarm app that isn't running can't wake you.
