@@ -57,7 +57,13 @@ final class NightstandController {
             .environment(LanguageSetting.shared)
         )
 
+        win.alphaValue = 0
         win.makeKeyAndOrderFront(nil)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = MotionEnvironment.duration(.nightstandAppear)
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            win.animator().alphaValue = 1
+        }
         NSApp.activate(ignoringOtherApps: true)
         win.makeKey()
         self.window = win
@@ -68,7 +74,17 @@ final class NightstandController {
 
     func hide() {
         wakeScheduler.releaseSleepAssertion()
-        window?.orderOut(nil)
+        guard let closing = window else { return }
         window = nil
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = MotionEnvironment.duration(.nightstandDismiss)
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            closing.animator().alphaValue = 0
+        } completionHandler: {
+            MainActor.assumeIsolated {
+                closing.orderOut(nil)
+            }
+        }
     }
 }

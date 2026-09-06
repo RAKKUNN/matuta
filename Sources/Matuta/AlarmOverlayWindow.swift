@@ -62,7 +62,14 @@ final class AlarmOverlayController {
                 )
                 .environment(LanguageSetting.shared)
             )
+            // 소리는 이미 나고 있다. 화면만 서서히 덮는다.
+            window.alphaValue = 0
             window.makeKeyAndOrderFront(nil)
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = MotionEnvironment.duration(.alarmAppear)
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                window.animator().alphaValue = 1
+            }
             windows.append(window)
         }
 
@@ -79,10 +86,29 @@ final class AlarmOverlayController {
         first.makeKeyAndOrderFront(nil)
     }
 
-    func hide() {
-        for window in windows {
-            window.orderOut(nil)
-        }
+    func hide(completion: (@MainActor @Sendable () -> Void)? = nil) {
+        let closing = windows
         windows.removeAll()
+
+        guard !closing.isEmpty else {
+            completion?()
+            return
+        }
+
+        let duration = MotionEnvironment.duration(.alarmDismiss)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = duration
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            for window in closing {
+                window.animator().alphaValue = 0
+            }
+        } completionHandler: {
+            MainActor.assumeIsolated {
+                for window in closing {
+                    window.orderOut(nil)
+                }
+                completion?()
+            }
+        }
     }
 }
