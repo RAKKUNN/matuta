@@ -341,7 +341,21 @@ function exitScene(tl, sceneId, at) {
   tl.add(sceneId, { opacity: 0, y: EXIT_Y, duration: 620, ease: 'inQuad' }, at);
 }
 
+/* 타임라인은 항상 하나만 살아 있어야 한다.
+   anime 엔진은 등록된 애니메이션을 계속 틱시키므로, 이전 것을 끊지 않고
+   새로 만들면 같은 요소를 두 개 이상이 동시에 움직인다. 장면이 겹쳐 보이고
+   칩 텍스트가 엉뚱한 시점에 바뀌던 원인이 이것이었다. */
+let timeline = null;
+
+function dispose() {
+  if (!timeline) return;
+  timeline.pause();
+  timeline.cancel();
+  timeline = null;
+}
+
 function build() {
+  dispose();
   reset();
   clockProxy.minutes = 3 * 60 + 12;
 
@@ -416,16 +430,17 @@ function build() {
     .add('#endmeta',  { opacity: [0, 1], duration: 850 }, 21600)
     .add('#glow',     { opacity: [0, .42], scale: [.85, 1.02], duration: 2400, ease: 'outQuad' }, 20100);
 
+  timeline = tl;
   return tl;
 }
 
-let timeline = build();
+build();
 
 /* 스크럽용. 녹화 중 특정 구간만 다시 보거나 콘솔에서 matuta.seek(9000). */
 window.matuta = {
   get timeline() { return timeline; },
   get duration() { return timeline.duration; },
-  replay() { timeline = build(); return timeline; },
+  replay() { return build(); },
   seek(ms) { timeline.pause(); timeline.seek(ms); return ms; },
   play() { timeline.play(); },
 
@@ -448,21 +463,34 @@ window.matuta = {
 
 /* 녹화 모드. 마우스를 건드리면 컨트롤이 다시 나오므로
    시작도 종료도 키보드로만 되게 한다. R 로 들어가고 Esc 로 나온다. */
+let armTimer = null;
+
 function startRecording() {
+  clearTimeout(armTimer);              // R 을 연타해도 빌드는 한 번만
+  dispose();                           // 대기하는 1.2초 동안 화면은 초기 상태로
+  reset();
   $('controls').classList.add('hidden');
   document.body.style.cursor = 'none';
-  setTimeout(() => { timeline = build(); }, 1200);
+  armTimer = setTimeout(build, 1200);
 }
+
 function stopRecording() {
+  clearTimeout(armTimer);
   $('controls').classList.remove('hidden');
   document.body.style.cursor = '';
 }
 
-$('replay').addEventListener('click', () => { timeline = build(); });
-$('record').addEventListener('click', startRecording);
+/* 버튼에 포커스가 남으면 Space 가 keydown 핸들러와 버튼 click 을
+   둘 다 발화시킨다. 눌린 즉시 포커스를 뗀다. */
+function onClick(id, fn) {
+  $(id).addEventListener('click', (e) => { e.currentTarget.blur(); fn(); });
+}
+onClick('replay', () => build());
+onClick('record', startRecording);
 
 addEventListener('keydown', (e) => {
-  if (e.code === 'Space')  { e.preventDefault(); timeline = build(); }
+  if (e.repeat) return;                // 키를 누르고 있어도 한 번만
+  if (e.code === 'Space')  { e.preventDefault(); build(); }
   if (e.code === 'KeyR')   { e.preventDefault(); startRecording(); }
   if (e.code === 'Escape') { stopRecording(); }
 });
