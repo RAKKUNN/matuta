@@ -152,6 +152,10 @@ final class AlarmListModel {
         preflightEngine.resolveAutomation(for: nextAlarm)
     }
 
+    func enableLaunchAtLogin() {
+        preflightEngine.enableLaunchAtLogin()
+    }
+
     func setVolumeToSafeLevel(_ volume: Float = 0.7) {
         preflightEngine.setVolumeToSafeLevel(volume)
     }

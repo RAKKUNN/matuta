@@ -22,6 +22,7 @@ public struct PreflightWarning: Sendable, Equatable, Identifiable {
         case lowVolume
         case wakeNotScheduled
         case automationDenied
+        case notLaunchAtLogin
     }
 
     public enum Severity: Sendable, Equatable {
@@ -156,7 +157,8 @@ public struct PreflightEvaluator: Sendable {
         wakeScheduled: Bool,
         isSleepPrevented: Bool = false,
         alarm: Alarm?,
-        automation: AutomationSnapshot = .notRequired
+        automation: AutomationSnapshot = .notRequired,
+        launchesAtLogin: Bool = true
     ) -> PreflightReport {
         var warnings: [PreflightWarning] = []
 
@@ -233,6 +235,19 @@ public struct PreflightEvaluator: Sendable {
             case .notRequired, .granted, .unknown:
                 break
             }
+        }
+
+        // 5. 앱이 로그인 시 자동 실행되는가.
+        //    앱이 떠 있지 않으면 알람은 울리지 않는다. 볼륨이나 출력기기와 달리
+        //    발화 시점에 앱이 스스로 고칠 수 없는 유일한 항목이다.
+        if let alarm, alarm.isEnabled && !launchesAtLogin {
+            warnings.append(PreflightWarning(
+                kind: .notLaunchAtLogin,
+                text: .notLaunchAtLoginWarning,
+                severity: .warning,
+                icon: "power",
+                actionText: .enableLaunchAtLogin
+            ))
         }
 
         let isSafe = warnings.filter({ $0.severity == .warning }).isEmpty

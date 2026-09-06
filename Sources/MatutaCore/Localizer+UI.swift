@@ -357,6 +357,24 @@ extension Localizer {
         case .languageEnglish:
             return "English"
 
+        case .launchAtLogin:
+            switch language {
+            case .korean: return "로그인 시 실행"
+            case .english: return "Launch at login"
+            }
+
+        case .notLaunchAtLoginWarning:
+            switch language {
+            case .korean: return "로그인 시 실행이 꺼져 있습니다 (재시동하면 알람이 울리지 않습니다)"
+            case .english: return "Not set to launch at login (alarms won't ring after a restart)"
+            }
+
+        case .enableLaunchAtLogin:
+            switch language {
+            case .korean: return "켜기"
+            case .english: return "Turn on"
+            }
+
         default:
             return ""
         }

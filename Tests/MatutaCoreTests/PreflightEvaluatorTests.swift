@@ -184,3 +184,43 @@ func automationUnknownProducesNoWarning() {
     #expect(report.warnings.contains { $0.kind == .automationDenied } == false)
     #expect(report.isSafe)
 }
+
+// MARK: - 로그인 시 자동 실행
+
+@Test("로그인 자동 실행이 꺼져 있으면 경고하고 안전 판정을 깬다")
+func notLaunchAtLoginProducesWarning() {
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: Alarm(hour: 7, minute: 0),
+        launchesAtLogin: false
+    )
+    let warning = report.warnings.first { $0.kind == .notLaunchAtLogin }
+    #expect(warning?.severity == .warning)
+    #expect(warning?.actionText != nil)
+    #expect(report.isSafe == false)
+}
+
+@Test("로그인 자동 실행이 켜져 있으면 경고하지 않는다")
+func launchAtLoginProducesNoWarning() {
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: Alarm(hour: 7, minute: 0),
+        launchesAtLogin: true
+    )
+    #expect(report.warnings.contains { $0.kind == .notLaunchAtLogin } == false)
+    #expect(report.isSafe)
+}
+
+@Test("켜진 알람이 없으면 로그인 자동 실행을 따지지 않는다")
+func noEnabledAlarmSkipsLaunchAtLoginCheck() {
+    // 알람이 없으면 앱이 안 떠 있어도 잃을 것이 없다.
+    let report = PreflightEvaluator.evaluate(
+        audio: AudioSnapshot(defaultDeviceName: "내장 스피커", isHeadphones: false, volume: 0.7, isMuted: false),
+        wakeScheduled: true,
+        alarm: nil,
+        launchesAtLogin: false
+    )
+    #expect(report.warnings.contains { $0.kind == .notLaunchAtLogin } == false)
+}

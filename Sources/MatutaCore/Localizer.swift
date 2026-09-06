@@ -37,7 +37,8 @@ public enum Localizer {
              .chooseLocalFile, .streamRadio, .spotify, .spotifyWithBackup, .appleMusic, .webAudio, .webWithBackup, .chooseFile, .preview, .stop,
              .lofiGirlWeb, .playbackPrimary, .playbackWithBackup, .playbackFallback,
              .themeMidnight, .themeOat, .themeMatcha, .themeSunset, .themeLavender, .themeCedar,
-             .settingsTitle, .language, .languageSystem, .languageKorean, .languageEnglish:
+             .settingsTitle, .language, .languageSystem, .languageKorean, .languageEnglish,
+             .launchAtLogin, .notLaunchAtLoginWarning, .enableLaunchAtLogin:
             return stringForUI(text, language)
         }
     }

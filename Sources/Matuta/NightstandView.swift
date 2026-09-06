@@ -197,6 +197,8 @@ struct NightstandView: View, Localizable {
             engine.setVolumeToSafeLevel(0.7)
         case .automationDenied:
             engine.resolveAutomation(for: nextAlarm)
+        case .notLaunchAtLogin:
+            engine.enableLaunchAtLogin()
         case .wakeNotScheduled:
             break
         }

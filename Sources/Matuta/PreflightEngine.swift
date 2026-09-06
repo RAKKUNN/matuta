@@ -26,7 +26,8 @@ public final class PreflightEngine {
             wakeScheduled: isWakeArmed,
             isSleepPrevented: isSleepPrevented,
             alarm: alarm,
-            automation: automation
+            automation: automation,
+            launchesAtLogin: LaunchAtLogin.isEnabled
         )
     }
 
@@ -42,5 +43,10 @@ public final class PreflightEngine {
     public func resolveAutomation(for alarm: Alarm?) {
         guard let alarm else { return }
         AutomationPermission.resolve(for: alarm.source)
+    }
+
+    /// 로그인 자동 실행 경고를 눌렀을 때.
+    public func enableLaunchAtLogin() {
+        LaunchAtLogin.setEnabled(true)
     }
 }

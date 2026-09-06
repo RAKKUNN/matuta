@@ -133,6 +133,9 @@ public enum LocalizedText: Sendable, Equatable, Hashable {
     case languageSystem
     case languageKorean
     case languageEnglish
+    case launchAtLogin
+    case notLaunchAtLoginWarning
+    case enableLaunchAtLogin
 
     // MARK: - App Names
     case appName(AutomationTarget)

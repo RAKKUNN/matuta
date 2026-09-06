@@ -19,11 +19,16 @@ struct SettingsView: View, Localizable {
                     Text(t(.languageEnglish)).tag(AppLanguage.english)
                 }
                 .pickerStyle(.segmented)
+
+                Toggle(t(.launchAtLogin), isOn: Binding(
+                    get: { LaunchAtLogin.isEnabled },
+                    set: { LaunchAtLogin.setEnabled($0) }
+                ))
             }
         }
         .formStyle(.grouped)
         // 세그먼트 3개("System / 한국어 / English")가 줄바꿈 없이 들어갈 폭.
         // 높이를 좁게 잡으면 스크롤바가 생기고 컨트롤이 잘린다.
-        .frame(width: 420, height: 130)
+        .frame(width: 420, height: 180)
     }
 }

@@ -138,6 +138,9 @@ func testAllLocalizedKeysNonEmpty() {
         .languageSystem,
         .languageKorean,
         .languageEnglish,
+        .launchAtLogin,
+        .notLaunchAtLoginWarning,
+        .enableLaunchAtLogin,
 
         // Apps
         .appName(.spotify),

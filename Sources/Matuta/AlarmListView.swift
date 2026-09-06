@@ -352,6 +352,8 @@ struct AlarmListView: View, Localizable {
             model.setVolumeToSafeLevel(0.7)
         case .automationDenied:
             model.resolveAutomation()
+        case .notLaunchAtLogin:
+            model.enableLaunchAtLogin()
         case .wakeNotScheduled:
             break
         }
