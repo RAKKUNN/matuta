@@ -40,7 +40,12 @@ struct AlarmListView: View, Localizable {
                                 isSnoozing: isSnoozing,
                                 snoozeUntil: model.snoozeUntil,
                                 onCancelSnooze: { model.cancelSnooze() },
-                                onToggle: { model.toggle(alarm) },
+                                onToggle: {
+                                    // 켜는 것은 신뢰를 맡기는 결정이라 확인해 준다.
+                                    // 끄는 것은 되돌리기 쉬우므로 조용히 둔다.
+                                    if !alarm.isEnabled { Haptics.commit() }
+                                    model.toggle(alarm)
+                                },
                                 onEdit: { model.editing = alarm },
                                 onDelete: { model.delete(alarm) }
                             )
